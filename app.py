@@ -5,43 +5,45 @@ import os
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Custom CSS for Typography and Card Layout
+# 2. Custom CSS
 st.markdown("""
     <style>
-    /* Grid Title Font Scaling */
     .grid-stamp-title {
         font-size: 14px !important;
         font-weight: 600;
         line-height: 1.2;
         margin-bottom: 8px;
-        height: 3.6em;
+        height: 3.2em;
         overflow: hidden;
     }
-    /* Card Styling */
+    /* Standardized Hairline for Grid Cards */
     .stamp-card {
-        border: 1px solid #e6e9ef;
-        border-radius: 10px;
-        padding: 12px;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
+        border-top: 1px solid #dee2e6;
+        padding: 15px 5px;
+        margin-bottom: 10px;
     }
-    /* Intro Text Styling */
     .estate-intro {
         color: #666;
         font-style: italic;
         text-align: center;
         margin-bottom: 20px;
     }
+    /* Button Styling for Layout Toggle */
+    div.stButton > button {
+        width: 100%;
+        border-radius: 5px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cached Data Loading
+# 3. Data Loading with Currency Formatting
 @st.cache_data
 def load_data():
     df = pd.read_csv("inventory.csv")
     df['buyout_price'] = pd.to_numeric(df['buyout_price'], errors='coerce')
     df = df.fillna('')
+    # Create a formatted string column for display
+    df['formatted_price'] = df['buyout_price'].apply(lambda x: f"{x:,.2f}" if pd.notnull(x) else "0.00")
     return df
 
 df_raw = load_data()
@@ -49,29 +51,27 @@ df_raw = load_data()
 # --- SIDEBAR CONTROLS ---
 st.sidebar.title("🔍 Gallery Controls")
 
-# Return to Top (Anchor Link)
 st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='background-color:#f0f2f6;padding:10px;border-radius:5px;text-align:center;border:1px solid #dcdfe4;font-weight:bold;margin-bottom:10px;'>⬆️ Return to Top</div></a>", unsafe_allow_html=True)
 
-# View Mode Toggle
+# Layout Orientation Toggle
+st.sidebar.subheader("Layout Orientation")
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
 
 col_v1, col_v2 = st.sidebar.columns(2)
-if col_v1.button("Grid View"):
+if col_v1.button("⣿ Grid"):
     st.session_state.view_mode = 'Grid'
-if col_v2.button("Row View"):
+if col_v2.button("☰ Rows"):
     st.session_state.view_mode = 'Rows'
 
 st.sidebar.markdown("---")
 
-# Sort & Reset
 sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
 if st.sidebar.button("❌ Reset All Filters"):
     st.rerun()
 
 st.sidebar.markdown("---")
 
-# Filters
 def get_opts(col):
     return sorted([str(x) for x in df_raw[col].unique() if str(x).strip() != ''])
 
@@ -85,14 +85,12 @@ f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
 if os.path.exists("racingstamp.png"):
-    left_co, cent_co, last_co = st.columns([1, 1, 1])
-    with cent_co:
-        st.image("racingstamp.png", width=250)
+    _, cent_co, _ = st.columns([1, 1, 1])
+    cent_co.image("racingstamp.png", width=250)
 
 st.markdown("<h1 style='text-align: center;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
 st.markdown('<p class="estate-intro">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
-# THE SEARCH BAR (Functional and always visible at top)
 search = st.text_input("🔍 Search Name, Catalog #, or Country", placeholder="Type to filter...")
 
 # --- FILTERING LOGIC ---
@@ -117,29 +115,33 @@ elif f_has_cert == "No":
 if sort_option == "Low to High": df = df.sort_values("buyout_price")
 elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending=False)
 
-# THE HEADER (Functional Count)
-st.info(f"Showing {len(df)} items in {st.session_state.view_mode} mode.")
+st.info(f"Showing {len(df)} items match your selection.")
 
 # --- DISPLAY ---
 if 'limit' not in st.session_state: st.session_state.limit = 24
 df_show = df.head(st.session_state.limit)
 
 if st.session_state.view_mode == 'Grid':
-    cols = st.columns(4) # 4 columns for a cleaner grid
+    grid_cols = st.columns(4)
     for i, (_, row) in enumerate(df_show.iterrows()):
-        with cols[i % 4]:
+        with grid_cols[i % 4]:
             st.markdown('<div class="stamp-card">', unsafe_allow_html=True)
             imgs = str(row['image']).split('||')
             if imgs[0].startswith('http'):
                 st.image(imgs[0], use_container_width=True)
+                if len(imgs) > 1:
+                    with st.expander("📷 View All Images"):
+                        sub_cols = st.columns(3)
+                        for j, url in enumerate(imgs[1:]):
+                            sub_cols[j % 3].image(url, use_container_width=True)
             
-            # SMALLER FONT FOR TITLE
             st.markdown(f'<p class="grid-stamp-title">{row["name"]}</p>', unsafe_allow_html=True)
-            st.write(f"**${row['buyout_price']}** | {row['item_specifics_02_catalog_number']}")
+            st.write(f"**${row['formatted_price']}**")
             
             with st.expander("Details"):
-                st.write(f"Cond: {row['item_specifics_04_condition']}")
-                st.caption(row['description'][:200] + "...")
+                st.write(f"**Cat #:** {row['item_specifics_02_catalog_number']}")
+                st.write(f"**Cond:** {row['item_specifics_04_condition']}")
+                st.caption(row['description'][:150] + "...")
             st.markdown('</div>', unsafe_allow_html=True)
 else:
     for _, row in df_show.iterrows():
@@ -149,9 +151,14 @@ else:
                 imgs = str(row['image']).split('||')
                 if imgs[0].startswith('http'):
                     st.image(imgs[0], use_container_width=True)
+                    if len(imgs) > 1:
+                        with st.expander("📷 View All Images"):
+                            sub_cols = st.columns(3)
+                            for j, url in enumerate(imgs[1:]):
+                                sub_cols[j % 3].image(url, use_container_width=True)
             with c2:
                 st.subheader(row['name'])
-                st.write(f"### ${row['buyout_price']}")
+                st.write(f"### ${row['formatted_price']}")
                 st.write(f"**Country:** {row['item_specifics_01_country']} | **Cat #:** {row['item_specifics_02_catalog_number']}")
                 with st.expander("📄 Full Description"):
                     st.write(row['description'])

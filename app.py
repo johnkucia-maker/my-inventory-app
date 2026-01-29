@@ -1,76 +1,114 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="RRKLT Stamp Inventory", layout="wide")
+st.set_page_config(page_title="RRKLT Inventory Mirror", layout="wide")
 
+# Custom CSS for a professional look
 st.markdown("""
     <style>
-    .stamp-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 25px; background-color: #f9f9f9; }
-    .stImage { border-radius: 4px; border: 1px solid #eee; }
+    .main { background-color: #f5f7f9; }
+    [data-testid="stMetricValue"] { font-size: 1.2rem; }
+    .stButton button { width: 100%; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("✉️ RRKLT Full Inventory Mirror")
-st.write("Browse your collection. All available images for each item are displayed below.")
+@st.cache_data
+def load_data():
+    df = pd.read_csv("inventory.csv")
+    # Convert prices to numeric so they sort correctly
+    df['buyout_price'] = pd.to_numeric(df['buyout_price'], errors='coerce')
+    return df
 
 try:
-    df = pd.read_csv("inventory.csv")
-
-    search = st.text_input("Search by Name, Catalog Number, or Country", "")
+    df_raw = load_data()
     
+    # --- SIDEBAR FILTERS ---
+    st.sidebar.title("🔍 Filters & Sorting")
+    
+    if st.sidebar.button("🔄 Reset All (Clear Search)"):
+        st.rerun()
+
+    # Sorting
+    sort_option = st.sidebar.selectbox("Sort by Price:", ["Original", "Price: Low to High", "Price: High to Low"])
+    
+    # Filter Categories (cleaning out empty values)
+    def get_options(col):
+        return sorted([str(x) for x in df_raw[col].unique() if pd.notna(x)])
+
+    f_country = st.sidebar.multiselect("Country", get_options('item_specifics_01_country'))
+    f_type = st.sidebar.multiselect("Stamp Type", get_options('item_specifics_03_stamp_type'))
+    f_cond = st.sidebar.multiselect("Condition", get_options('item_specifics_04_condition'))
+    f_center = st.sidebar.multiselect("Centering", get_options('item_specifics_08_centering'))
+    f_format = st.sidebar.multiselect("Stamp Format", get_options('item_specifics_05_stamp_format'))
+    f_cert = st.sidebar.selectbox("Has Certificate?", ["All", "Yes", "No"])
+    
+    st.sidebar.markdown("---")
+    if st.sidebar.button("⬆️ Scroll to Top"):
+        st.rerun()
+
+    # --- FILTERING LOGIC ---
+    df = df_raw.copy()
+    
+    # Text Search
+    search = st.text_input("Search Name or Catalog #", key="search_bar")
     if search:
-        mask = (
-            df['name'].astype(str).str.contains(search, case=False, na=False) | 
-            df['item_specifics_02_catalog_number'].astype(str).str.contains(search, case=False, na=False) |
-            df['item_specifics_01_country'].astype(str).str.contains(search, case=False, na=False)
-        )
-        df = df[mask]
+        df = df[df['name'].astype(str).str.contains(search, case=False, na=False) | 
+                df['item_specifics_02_catalog_number'].astype(str).str.contains(search, case=False, na=False)]
 
-    st.info(f"Showing {len(df)} items")
+    # Apply Multiselect Filters
+    if f_country: df = df[df['item_specifics_01_country'].isin(f_country)]
+    if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
+    if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
+    if f_center: df = df[df['item_specifics_08_centering'].isin(f_center)]
+    if f_format: df = df[df['item_specifics_05_stamp_format'].isin(f_format)]
+    
+    if f_cert == "Yes": df = df[df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False, na=False)]
+    elif f_cert == "No": df = df[~df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False, na=False)]
 
-    # --- MAIN GRID ---
+    # Apply Sorting
+    if sort_option == "Price: Low to High":
+        df = df.sort_values("buyout_price", ascending=True)
+    elif sort_option == "Price: High to Low":
+        df = df.sort_values("buyout_price", ascending=False)
+
+    # --- DISPLAY ---
+    st.title("✉️ RRKLT Private Catalog")
+    st.metric("Total Items Found", len(df))
+
     for i, (idx, row) in enumerate(df.iterrows()):
-        # Create a container/card for each stamp
         with st.container():
-            col_img, col_info = st.columns([1, 1]) # Splits the row into Image side and Info side
+            col_img, col_info = st.columns([1, 1.5])
             
             with col_img:
-                # --- MULTI-IMAGE LOGIC ---
                 raw_images = str(row['image']).split('||')
-                # Filter out any empty strings or 'nan'
                 clean_images = [img.strip() for img in raw_images if img.strip().lower() != 'nan' and img.strip()]
-                
                 if clean_images:
-                    # Show the first (main) image large
-                    st.image(clean_images[0], use_container_width=True, caption="Main Image")
-                    
-                    # If there are more images, show them in a smaller row below
+                    st.image(clean_images[0], use_container_width=True)
                     if len(clean_images) > 1:
-                        st.write("Additional Views:")
-                        sub_cols = st.columns(min(len(clean_images)-1, 4)) # Up to 4 small images wide
-                        for sub_idx, extra_img in enumerate(clean_images[1:]):
-                            with sub_cols[sub_idx % 4]:
-                                st.image(extra_img, use_container_width=True)
+                        with st.expander("📷 View More Images"):
+                            cols = st.columns(3)
+                            for sub_idx, img in enumerate(clean_images[1:]):
+                                cols[sub_idx % 3].image(img, use_container_width=True)
                 else:
-                    st.warning("🖼️ No Images Available")
+                    st.info("No Image Available")
             
             with col_info:
                 st.subheader(row['name'])
-                st.write(f"💰 **Price:** {row['currency']} ${row['buyout_price']}")
+                st.write(f"### ${row['buyout_price']} {row['currency']}")
                 
-                # Create a tidy table for the specs
-                details = {
-                    "Catalog #": row['item_specifics_02_catalog_number'],
-                    "Condition": row['item_specifics_04_condition'],
-                    "Country": row['item_specifics_01_country'],
-                    "Type": row['item_specifics_03_stamp_type']
-                }
-                st.table(pd.DataFrame([details]).T.rename(columns={0: 'Details'}))
+                # Metadata Grid
+                m1, m2 = st.columns(2)
+                m1.write(f"**Country:** {row['item_specifics_01_country']}")
+                m1.write(f"**Cat #:** {row['item_specifics_02_catalog_number']}")
+                m2.write(f"**Condition:** {row['item_specifics_04_condition']}")
+                m2.write(f"**Centering:** {row['item_specifics_08_centering']}")
                 
-                with st.expander("📄 View Full Description"):
+                with st.expander("📄 Full Description & Certificate Details"):
+                    st.write(f"**Certificate Grade:** {row.get('item_specifics_10_certificate_grade', 'N/A')}")
+                    st.write("---")
                     st.write(row['description'])
             
             st.divider()
 
 except Exception as e:
-    st.error(f"Error loading inventory: {e}")
+    st.error(f"Error: {e}")

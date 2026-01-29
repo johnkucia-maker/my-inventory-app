@@ -20,7 +20,7 @@ df_raw = load_data()
 # --- SIDEBAR (FILTERS & NAVIGATION) ---
 st.sidebar.title("🔍 Filters & Sorting")
 
-# Return to Top Button
+# Return to Top Button (Anchor Link)
 st.sidebar.markdown("""
     <a href='#top' style='text-decoration: none;'>
         <div style='background-color: #f0f2f6; color: #31333F; padding: 10px; border-radius: 5px; text-align: center; border: 1px solid #dcdfe4; font-weight: bold; margin-bottom: 10px;'>
@@ -34,8 +34,8 @@ if st.sidebar.button("❌ Reset All Filters"):
 
 st.sidebar.markdown("---")
 
-# Instruction Blurb for Multiselect
-st.sidebar.info("💡 **Tip:** Hold **Ctrl** (Win) or **Cmd** (Mac) to select multiple options in the dropdowns.")
+# Instruction Blurb
+st.sidebar.info("💡 **Tip:** Hold **Ctrl** (Win) or **Cmd** (Mac) to select multiple options.")
 
 sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
 
@@ -100,4 +100,24 @@ for _, row in df_show.iterrows():
                         for j, url in enumerate(imgs[1:]):
                             sub_cols[j % 3].image(url, use_container_width=True)
         with c2:
-            st.subheader(
+            st.subheader(row['name'])
+            st.write(f"### ${row['buyout_price']} {row['currency']}")
+            
+            d1, d2 = st.columns(2)
+            d1.write(f"**Country:** {row['item_specifics_01_country']}")
+            d1.write(f"**Cat #:** {row['item_specifics_02_catalog_number']}")
+            d2.write(f"**Condition:** {row['item_specifics_04_condition']}")
+            d2.write(f"**Cert Grade:** {row['item_specifics_10_certificate_grade']}")
+            
+            with st.expander("📄 View Full Description"):
+                st.write(row['description'])
+        st.divider()
+
+if len(df) > st.session_state.limit:
+    if st.button("🔽 Load More Items"):
+        st.session_state.limit += 20
+        st.rerun()
+
+# Bottom Blurb
+st.write("---")
+st.caption("RRKLT Estate Collection, formerly of Cranberry Township, PA.")

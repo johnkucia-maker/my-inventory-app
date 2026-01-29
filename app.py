@@ -1,36 +1,49 @@
 import streamlit as st
 import pandas as pd
-import os
 
-st.title("📦 RRKLT Inventory Mirror")
+st.set_page_config(page_title="RRKLT Inventory Mirror", layout="wide")
+st.title("📦 RRKLT Private Inventory")
 
-# --- DEBUG SECTION ---
-# This part tells us what the app actually sees in the folder
-st.write("### 📂 Files found in your folder:")
-files = os.listdir('.')
-st.write(files)
+try:
+    # Load the file
+    df = pd.read_csv("inventory.csv")
+    
+    # --- STEP 1: SHOW THE COLUMNS ---
+    # This helps us see what HipStamp named your headers
+    with st.expander("🛠️ Debug: See Column Names"):
+        st.write("Your CSV has these columns:", df.columns.tolist())
+        st.write("First 3 rows of data:", df.head(3))
 
-target_file = "inventory.csv"
+    # --- STEP 2: TRY TO FIND THE RIGHT COLUMNS ---
+    # We check for common names like 'Title' or 'Item Title'
+    title_col = next((c for c in df.columns if 'title' in c.lower()), None)
+    price_col = next((c for c in df.columns if 'price' in c.lower()), None)
+    img_col = next((c for c in df.columns if 'image' in c.lower() or 'url' in c.lower()), None)
 
-if target_file in files:
-    st.success(f"Found {target_file}! Loading now...")
-    try:
-        df = pd.read_csv(target_file)
-        st.write("### Gallery View")
+    # --- STEP 3: DISPLAY ---
+    if title_col:
+        search = st.text_input("Search inventory...", "")
+        if search:
+            df = df[df[title_col].str.contains(search, case=False, na=False)]
+
+        st.write(f"Showing **{len(df)}** items:")
+        
+        # Create a grid
         cols = st.columns(3)
-        for i, row in df.iterrows():
+        for i, (idx, row) in enumerate(df.iterrows()):
             with cols[i % 3]:
-                # We use .get() to avoid errors if the column name is slightly different
-                img = row.get('Image URL') or row.get('image_url')
-                title = row.get('Title') or row.get('title')
-                price = row.get('Price') or row.get('price')
+                # Show image if we found a URL column
+                if img_col and pd.notna(row[img_col]):
+                    st.image(row[img_col], use_container_width=True)
                 
-                if img:
-                    st.image(img, use_container_width=True)
-                st.subheader(title)
-                st.write(f"Price: {price}")
-    except Exception as e:
-        st.error(f"Error reading the file: {e}")
-else:
-    st.error(f"Looking for '{target_file}' but could not find it.")
-    st.info("Check if your file is named exactly 'inventory.csv' (all lowercase).")
+                st.subheader(row[title_col])
+                
+                if price_col:
+                    st.write(f"**Price:** {row[price_col]}")
+                
+                st.divider()
+    else:
+        st.error("We found the file, but we couldn't find a 'Title' column. Look at the 'Debug' section above to see what the headers are named.")
+
+except Exception as e:
+    st.error(f"Something went wrong while reading the file: {e}")

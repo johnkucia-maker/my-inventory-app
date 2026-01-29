@@ -3,20 +3,13 @@ import pandas as pd
 
 st.set_page_config(page_title="RRKLT Stamp Inventory", layout="wide")
 
-# This is the part we fixed! It makes the app look clean.
 st.markdown("""
     <style>
-    .stamp-card {
-        border: 1px solid #ddd;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
+    .stamp-card { border: 1px solid #ddd; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("✉️ RRKLT Private Inventory Mirror")
-st.write("Browse the full inventory below. Use the search bar to find specific stamps.")
 
 try:
     df = pd.read_csv("inventory.csv")
@@ -36,8 +29,18 @@ try:
     cols = st.columns(3)
     for i, (idx, row) in enumerate(df.iterrows()):
         with cols[i % 3]:
-            if pd.notna(row['image']):
-                st.image(row['image'], use_container_width=True)
+            # --- UPDATED IMAGE LOGIC ---
+            img_url = str(row['image']).strip()
+            
+            # 1. If the image exists and starts with http, show it
+            if img_url and img_url.lower() != 'nan' and img_url.startswith('http'):
+                st.image(img_url, use_container_width=True)
+            # 2. If it exists but is a partial link, try to fix it
+            elif img_url and img_url.lower() != 'nan' and img_url.startswith('/'):
+                st.image(f"https://www.hipstamp.com{img_url}", use_container_width=True)
+            # 3. Otherwise, show a placeholder
+            else:
+                st.warning("🖼️ No Image Provided in CSV")
             
             st.subheader(row['name'])
             st.write(f"**Price:** {row['currency']} ${row['buyout_price']}")

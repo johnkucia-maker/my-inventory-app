@@ -69,4 +69,40 @@ try:
                 df['item_specifics_02_catalog_number'].str.lower().str.contains(s) |
                 df['item_specifics_01_country'].str.lower().str.contains(s)]
 
-    # Applying the 7 filters (Fixed the syntax
+    # Applying the 7 filters
+    if f_cat: df = df[df['category_id'].astype(str).isin(f_cat)]
+    if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
+    if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
+    if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]
+    if f_form: df = df[df['item_specifics_05_stamp_format'].isin(f_form)]
+    if f_grade: df = df[df['item_specifics_10_certificate_grade'].isin(f_grade)]
+    
+    if f_has_cert == "Yes": df = df[df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
+    elif f_has_cert == "No": df = df[~df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
+
+    if sort_option == "Low to High": df = df.sort_values("buyout_price")
+    elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending=False)
+
+    # --- GALLERY DISPLAY ---
+    st.title("✉️ RRKLT Private Catalog")
+    st.info(f"Showing {len(df)} items")
+
+    if 'limit' not in st.session_state: st.session_state.limit = 20
+    df_show = df.head(st.session_state.limit)
+
+    for _, row in df_show.iterrows():
+        with st.container():
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                imgs = str(row['image']).split('||')
+                if imgs[0].startswith('http'):
+                    st.image(imgs[0], use_container_width=True)
+                    if len(imgs) > 1:
+                        with st.expander("📷 More Photos"):
+                            sub = st.columns(3)
+                            for j, url in enumerate(imgs[1:]):
+                                sub[j % 3].image(url, use_container_width=True)
+            with c2:
+                st.subheader(row['name'])
+                st.write(f"### ${row['buyout_price']} {row['currency']}")
+                st

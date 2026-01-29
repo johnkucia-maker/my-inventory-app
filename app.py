@@ -9,9 +9,7 @@ st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
 # 3. Logo and Header Section
-# This checks if the file exists before trying to load it to prevent errors
 if os.path.exists("racingstamp.png"):
-    # Using columns to center the logo
     left_co, cent_co, last_co = st.columns([1, 1, 1])
     with cent_co:
         st.image("racingstamp.png", width=300)
@@ -42,13 +40,16 @@ st.sidebar.markdown("""
     </a>
     """, unsafe_allow_html=True)
 
+# MOVED: Sort Option is now ABOVE the break line
+sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
+
+st.sidebar.markdown("---")
+
+# MOVED: Reset Button is now BELOW the break line
 if st.sidebar.button("❌ Reset All Filters"):
     st.rerun()
 
-st.sidebar.markdown("---")
 st.sidebar.info("💡 **Tip:** Hold **Ctrl** (Win) or **Cmd** (Mac) to select multiple options.")
-
-sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
 
 def get_opts(col):
     return sorted([str(x) for x in df_raw[col].unique() if str(x).strip() != ''])

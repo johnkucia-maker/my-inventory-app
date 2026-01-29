@@ -1,13 +1,26 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Top Anchor for the 'Return to Top' functionality
+# 2. Top Anchor for navigation
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
-# 3. Cached Data Loading
+# 3. Logo and Header Section
+# This checks if the file exists before trying to load it to prevent errors
+if os.path.exists("racingstamp.png"):
+    # Using columns to center the logo
+    left_co, cent_co, last_co = st.columns([1, 1, 1])
+    with cent_co:
+        st.image("racingstamp.png", width=300)
+
+st.markdown("<h1 style='text-align: center;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: gray;'>This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</h4>", unsafe_allow_html=True)
+st.write("---")
+
+# 4. Cached Data Loading
 @st.cache_data
 def load_data():
     df = pd.read_csv("inventory.csv")
@@ -20,7 +33,7 @@ df_raw = load_data()
 # --- SIDEBAR (FILTERS & NAVIGATION) ---
 st.sidebar.title("🔍 Filters & Sorting")
 
-# Return to Top Button (Anchor Link)
+# Return to Top Button
 st.sidebar.markdown("""
     <a href='#top' style='text-decoration: none;'>
         <div style='background-color: #f0f2f6; color: #31333F; padding: 10px; border-radius: 5px; text-align: center; border: 1px solid #dcdfe4; font-weight: bold; margin-bottom: 10px;'>
@@ -33,8 +46,6 @@ if st.sidebar.button("❌ Reset All Filters"):
     st.rerun()
 
 st.sidebar.markdown("---")
-
-# Instruction Blurb
 st.sidebar.info("💡 **Tip:** Hold **Ctrl** (Win) or **Cmd** (Mac) to select multiple options.")
 
 sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
@@ -52,11 +63,6 @@ f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
 # --- FILTERING LOGIC ---
 df = df_raw.copy()
 
-# Intro Text
-st.title("✉️ RRKLT Estate Collection")
-st.markdown("#### *This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.*")
-st.write("---")
-
 search = st.text_input("🔍 Search Name, Catalog #, or Country", "")
 if search:
     s = search.lower()
@@ -64,7 +70,6 @@ if search:
             df['item_specifics_02_catalog_number'].str.lower().str.contains(s) |
             df['item_specifics_01_country'].str.lower().str.contains(s)]
 
-# Applying Filters
 if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
 if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
 if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]

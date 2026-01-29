@@ -16,7 +16,6 @@ st.markdown("""
         height: 3.2em;
         overflow: hidden;
     }
-    /* Standardized Hairline for Grid Cards */
     .stamp-card {
         border-top: 1px solid #dee2e6;
         padding: 15px 5px;
@@ -28,10 +27,15 @@ st.markdown("""
         text-align: center;
         margin-bottom: 20px;
     }
-    /* Button Styling for Layout Toggle */
     div.stButton > button {
         width: 100%;
         border-radius: 5px;
+    }
+    /* Styling for the small tip text */
+    .filter-tip {
+        font-size: 11px;
+        color: #666;
+        margin-top: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -42,7 +46,6 @@ def load_data():
     df = pd.read_csv("inventory.csv")
     df['buyout_price'] = pd.to_numeric(df['buyout_price'], errors='coerce')
     df = df.fillna('')
-    # Create a formatted string column for display
     df['formatted_price'] = df['buyout_price'].apply(lambda x: f"{x:,.2f}" if pd.notnull(x) else "0.00")
     return df
 
@@ -51,10 +54,10 @@ df_raw = load_data()
 # --- SIDEBAR CONTROLS ---
 st.sidebar.title("🔍 Gallery Controls")
 
+# Return to Top Link
 st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='background-color:#f0f2f6;padding:10px;border-radius:5px;text-align:center;border:1px solid #dcdfe4;font-weight:bold;margin-bottom:10px;'>⬆️ Return to Top</div></a>", unsafe_allow_html=True)
 
-# Layout Orientation Toggle
-st.sidebar.subheader("Layout Orientation")
+# Layout Toggle (No header as requested)
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
 
@@ -66,20 +69,27 @@ if col_v2.button("☰ Rows"):
 
 st.sidebar.markdown("---")
 
+# Sort Option
 sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
-if st.sidebar.button("❌ Reset All Filters"):
-    st.rerun()
 
 st.sidebar.markdown("---")
+
+# Reset Button moved to the top of the filter section
+if st.sidebar.button("❌ Reset All Filters"):
+    st.rerun()
 
 def get_opts(col):
     return sorted([str(x) for x in df_raw[col].unique() if str(x).strip() != ''])
 
+# The 5 Active Filter Categories
 f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'))
 f_cond = st.sidebar.multiselect("Condition", get_opts('item_specifics_04_condition'))
 f_cent = st.sidebar.multiselect("Centering", get_opts('item_specifics_08_centering'))
 f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'))
 f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
+
+# Restored instruction blurb at the bottom of filters
+st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options.</p>', unsafe_allow_html=True)
 
 # --- TOP SECTION ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)

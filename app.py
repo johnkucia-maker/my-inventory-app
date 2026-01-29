@@ -1,94 +1,91 @@
 import streamlit as st
 import pandas as pd
 
-# 1. Performance: Set page config and enable wide mode early
-st.set_page_config(page_title="RRKLT High-Speed Mirror", layout="wide")
+# 1. Page Config
+st.set_page_config(page_title="RRKLT Master Catalog", layout="wide")
 
-# 2. Performance: Cache the data so it stays in RAM
+# 2. Styling: Floating Arrow & Card UI
+st.markdown("""
+    <style>
+    /* Card Styling */
+    .stamp-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background-color: white; margin-bottom: 20px; }
+    
+    /* Floating Scroll Button */
+    #scrollBtn {
+        display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        z-index: 99; border: none; outline: none; background-color: #333; color: white;
+        cursor: pointer; padding: 15px; border-radius: 50%; font-size: 20px; opacity: 0.7; transition: 0.3s;
+    }
+    #scrollBtn:hover { opacity: 1; background-color: #000; }
+    </style>
+    
+    <button onclick="topFunction()" id="scrollBtn" title="Go to top">▲</button>
+    
+    <script>
+    const mybutton = window.parent.document.getElementById("scrollBtn");
+    const scrollContainer = window.parent.document.querySelector(".main");
+
+    scrollContainer.onscroll = function() {
+        if (scrollContainer.scrollTop > 300) {
+            mybutton.style.display = "block";
+        } else {
+            mybutton.style.display = "none";
+        }
+    };
+
+    function topFunction() {
+        scrollContainer.scrollTo({top: 0, behavior: 'smooth'});
+    }
+    </script>
+    """, unsafe_allow_html=True)
+
+# 3. Cached Data Loading
 @st.cache_data
-def load_and_clean_data():
-    # Reading CSV once and storing it
+def load_data():
     df = pd.read_csv("inventory.csv")
     df['buyout_price'] = pd.to_numeric(df['buyout_price'], errors='coerce')
-    # Pre-filling empty strings to avoid errors during search
-    df = df.fillna('') 
+    df = df.fillna('')
     return df
 
 try:
-    df_raw = load_and_clean_data()
+    df_raw = load_data()
     
-    # --- SIDEBAR (FAST FILTERS) ---
-    st.sidebar.title("🔍 Quick Filters")
+    # --- SIDEBAR (THE 7 CATEGORIES) ---
+    st.sidebar.title("📦 Navigation")
     
-    if st.sidebar.button("🔄 Reset / Clear All"):
+    # "X" / Clear Button
+    if st.sidebar.button("❌ Clear All & Reset"):
         st.rerun()
 
-    sort_option = st.sidebar.selectbox("Sort by:", ["Original", "Price: Low to High", "Price: High to Low"])
+    st.sidebar.markdown("---")
+    sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
 
-    # Pre-calculating filter options for speed
-    def get_options(col):
-        return sorted([str(x) for x in df_raw[col].unique() if x != ''])
+    def get_opts(col):
+        return sorted([str(x) for x in df_raw[col].unique() if str(x).strip() != ''])
 
-    f_country = st.sidebar.multiselect("Country", get_options('item_specifics_01_country'))
-    f_cond = st.sidebar.multiselect("Condition", get_options('item_specifics_04_condition'))
-    f_cert = st.sidebar.selectbox("Certificate?", ["All", "Yes", "No"])
+    # All requested categories
+    f_cat = st.sidebar.multiselect("Categories", get_opts('category_id'))
+    f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'))
+    f_cond = st.sidebar.multiselect("Condition", get_opts('item_specifics_04_condition'))
+    f_cent = st.sidebar.multiselect("Centering", get_opts('item_specifics_08_centering'))
+    f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'))
+    f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
+    f_grade = st.sidebar.multiselect("Certificate Grade", get_opts('item_specifics_10_certificate_grade'))
 
-    # --- HIGH-SPEED FILTERING ---
+    # --- FILTER LOGIC ---
     df = df_raw.copy()
-
-    # Search (Optimized)
-    search = st.text_input("Search Name or Catalog #")
+    
+    search = st.text_input("🔍 Search Name, Catalog #, or Country", "")
     if search:
-        # We only search the columns we care about to save processing power
-        search = search.lower()
-        df = df[
-            df['name'].str.lower().str.contains(search) | 
-            df['item_specifics_02_catalog_number'].str.lower().str.contains(search)
-        ]
+        s = search.lower()
+        df = df[df['name'].str.lower().str.contains(s) | 
+                df['item_specifics_02_catalog_number'].str.lower().str.contains(s) |
+                df['item_specifics_01_country'].str.lower().str.contains(s)]
 
-    # Apply Sidebar Filters
-    if f_country: df = df[df['item_specifics_01_country'].isin(f_country)]
+    # Applying the 7 filters
+    if f_cat: df = df[df['category_id'].astype(str).isin(f_cat)]
+    if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
     if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
-    if f_cert == "Yes": df = df[df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
-    elif f_cert == "No": df = df[~df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
-
-    if sort_option == "Price: Low to High":
-        df = df.sort_values("buyout_price")
-    elif sort_option == "Price: High to Low":
-        df = df.sort_values("buyout_price", ascending=False)
-
-    # --- DISPLAY (PAGINATION) ---
-    # To prevent the browser from crashing with 1000 images, 
-    # we show the first 20 and let the user click "Load More"
-    items_per_page = 20
-    if 'page_size' not in st.session_state:
-        st.session_state.page_size = items_per_page
-
-    st.title(f"✉️ RRKLT Catalog ({len(df)} items)")
-
-    # Only show the slice of data for the current page size
-    df_visible = df.head(st.session_state.page_size)
-
-    for idx, row in df_visible.iterrows():
-        with st.container():
-            c1, c2 = st.columns([1, 2])
-            with c1:
-                # Optimized image loading
-                img_list = str(row['image']).split('||')
-                if img_list[0].startswith('http'):
-                    st.image(img_list[0], use_container_width=True)
-            with c2:
-                st.subheader(row['name'])
-                st.write(f"**Price:** ${row['buyout_price']} | **Cat #:** {row['item_specifics_02_catalog_number']}")
-                with st.expander("Details"):
-                    st.write(row['description'])
-            st.divider()
-
-    # "Load More" button at the bottom
-    if len(df) > st.session_state.page_size:
-        if st.button("🔽 Load More Items"):
-            st.session_state.page_size += 20
-            st.rerun()
-
-except Exception as e:
-    st.error(f"Error: {e}")
+    if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]
+    if f_form: df = df[df['item_specifics_05_stamp_format'].isin(f_form)]
+    if f_grade: df = df[df['item_specifics_10_certificate_grade'].isin(

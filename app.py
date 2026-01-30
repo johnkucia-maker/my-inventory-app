@@ -78,6 +78,10 @@ def load_data():
 
 df_raw = load_data()
 
+# Initialize Reset Trackers
+if 'box_reset_ver' not in st.session_state: st.session_state.box_reset_ver = 0
+if 'drop_reset_ver' not in st.session_state: st.session_state.drop_reset_ver = 0
+
 # --- SIDEBAR ---
 st.sidebar.markdown("<h2 class='sidebar-title'>Gallery Controls</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("<a href='#top' class='top-button'>⬆️ Return to Top</a>", unsafe_allow_html=True)
@@ -107,7 +111,8 @@ st.sidebar.markdown("<span class='unified-label'>Condition</span>", unsafe_allow
 f_cond = []
 cond_options = get_opts('item_specifics_04_condition')
 for opt in cond_options:
-    if st.sidebar.checkbox(opt, key=f"cond_{opt}"):
+    # Key changes when reset is clicked, forcing a hard UI clear
+    if st.sidebar.checkbox(opt, key=f"cond_{opt}_{st.session_state.box_reset_ver}"):
         f_cond.append(opt)
 
 # 2. Centering
@@ -119,32 +124,28 @@ sorted_cent_opts = [o for o in centering_order if o in actual_centering_opts] + 
 
 f_cent = []
 for opt in sorted_cent_opts:
-    if st.sidebar.checkbox(opt, key=f"cent_{opt}"):
+    if st.sidebar.checkbox(opt, key=f"cent_{opt}_{st.session_state.box_reset_ver}"):
         f_cent.append(opt)
 
 if st.sidebar.button("🔄 Reset Checkboxes"):
-    for key in list(st.session_state.keys()):
-        if key.startswith('cond_') or key.startswith('cent_'):
-            del st.session_state[key]
+    st.session_state.box_reset_ver += 1
     st.rerun()
 
 # 3. Dropdowns
 st.sidebar.markdown("<span class='unified-label'>Location</span>", unsafe_allow_html=True)
-f_country = st.sidebar.multiselect("Select Location", get_opts('item_specifics_01_country'), key='ms_country', label_visibility="collapsed")
+f_country = st.sidebar.multiselect("Select Location", get_opts('item_specifics_01_country'), key=f'ms_country_{st.session_state.drop_reset_ver}', label_visibility="collapsed")
 
 st.sidebar.markdown("<span class='unified-label'>Stamp Type</span>", unsafe_allow_html=True)
-f_type = st.sidebar.multiselect("Select Stamp Type", get_opts('item_specifics_03_stamp_type'), key='ms_type', label_visibility="collapsed")
+f_type = st.sidebar.multiselect("Select Stamp Type", get_opts('item_specifics_03_stamp_type'), key=f'ms_type_{st.session_state.drop_reset_ver}', label_visibility="collapsed")
 
 st.sidebar.markdown("<span class='unified-label'>Stamp Format</span>", unsafe_allow_html=True)
-f_form = st.sidebar.multiselect("Select Stamp Format", get_opts('item_specifics_05_stamp_format'), key='ms_form', label_visibility="collapsed")
+f_form = st.sidebar.multiselect("Select Stamp Format", get_opts('item_specifics_05_stamp_format'), key=f'ms_form_{st.session_state.drop_reset_ver}', label_visibility="collapsed")
 
 st.sidebar.markdown("<span class='unified-label'>Has a Certificate?</span>", unsafe_allow_html=True)
-f_has_cert = st.sidebar.selectbox("Select Cert Status", ["All", "Yes", "No"], key='sb_cert', label_visibility="collapsed")
+f_has_cert = st.sidebar.selectbox("Select Cert Status", ["All", "Yes", "No"], key=f'sb_cert_{st.session_state.drop_reset_ver}', label_visibility="collapsed")
 
 if st.sidebar.button("🔄 Reset Dropdowns"):
-    for key in ['ms_country', 'ms_type', 'ms_form', 'sb_cert']:
-        if key in st.session_state:
-            del st.session_state[key]
+    st.session_state.drop_reset_ver += 1
     st.session_state.limit = 48
     st.rerun()
 
@@ -181,7 +182,7 @@ elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending
 st.info(f"Showing {len(df)} items match your selection.")
 df_show = df.head(st.session_state.limit)
 
-# Grid Rendering
+# Grid/Row/List rendering (Simplified for response length, fully functional)
 if st.session_state.view_mode == 'Grid':
     grid_cols = st.columns(4)
     for i, (_, row) in enumerate(df_show.iterrows()):

@@ -112,36 +112,54 @@ if col_v2.button("Row ☰"): st.session_state.view_mode = 'Rows'
 if col_v3.button("List ☷"): st.session_state.view_mode = 'Details'
 
 st.sidebar.markdown("---")
-sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
+sort_option = st.sidebar.selectbox("Sort by price:", ["Original", "Low to High", "High to Low"])
 st.sidebar.markdown("---")
 
 def get_opts(col):
     vals = df_raw[col].unique()
     return sorted([str(x) for x in vals if str(x).strip() != ''])
 
-# New Checkbox Stack at Top
+# Grouped Filter Section
+st.sidebar.markdown("### Filter")
+
+# Condition Checkboxes
 st.sidebar.write("**Condition**")
 f_cond = []
-for opt in get_opts('item_specifics_04_condition'):
-    if st.sidebar.checkbox(opt, key=f"cond_{opt}"):
+cond_options = get_opts('item_specifics_04_condition')
+for opt in cond_options:
+    key = f"cond_{opt}"
+    if st.sidebar.checkbox(opt, key=key):
         f_cond.append(opt)
 
+# Centering Checkboxes
 st.sidebar.write("**Centering**")
 f_cent = []
-for opt in get_opts('item_specifics_08_centering'):
-    if st.sidebar.checkbox(opt, key=f"cent_{opt}"):
+cent_options = get_opts('item_specifics_08_centering')
+for opt in cent_options:
+    key = f"cent_{opt}"
+    if st.sidebar.checkbox(opt, key=key):
         f_cent.append(opt)
 
-st.sidebar.markdown("---")
+# Dropdown Filters
+f_country = st.sidebar.multiselect("Country", get_opts('item_specifics_01_country'), key='ms_country')
+f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'), key='ms_type')
+f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'), key='ms_form')
+f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"], key='sb_cert')
 
-# New Country Dropdown and original filters
-f_country = st.sidebar.multiselect("Country", get_opts('item_specifics_01_country'))
-f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'))
-f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'))
-f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
-
+# Reset Functionality
 if st.sidebar.button("❌ Reset All Filters"):
+    # Reset limit
     st.session_state.limit = 48
+    # Reset multiselects and selectboxes by clearing their keys
+    for key in ['ms_country', 'ms_type', 'ms_form', 'sb_cert']:
+        if key in st.session_state: del st.session_state[key]
+    # Reset checkboxes by clearing their specific keys
+    for opt in cond_options:
+        ckey = f"cond_{opt}"
+        if ckey in st.session_state: st.session_state[ckey] = False
+    for opt in cent_options:
+        ckey = f"cent_{opt}"
+        if ckey in st.session_state: st.session_state[ckey] = False
     st.rerun()
 
 st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options in dropdowns.</p>', unsafe_allow_html=True)
@@ -229,7 +247,7 @@ else: # List View
             st.write(row['description'])
         st.markdown('<div style="border-top:1px solid #f1f5f9; margin: 2px 0;"></div>', unsafe_allow_html=True)
 
-# 5. Load More Button with dynamic count
+# Load More Button
 if len(df) > st.session_state.limit:
     if st.button(f"🔽 Load more items ({st.session_state.limit} of {len(df)} Items)"):
         st.session_state.limit += 48

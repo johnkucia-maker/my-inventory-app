@@ -6,83 +6,44 @@ from difflib import get_close_matches
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Premium CSS Overhaul
+# 2. Stable CSS (Minimal)
 st.markdown("""
     <style>
-    /* Main Background & Font */
-    .main {
-        background-color: #f8f9fa;
-    }
-    
-    /* Premium Card Styling */
-    .stamp-card {
-        background: white;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-        border: 1px solid #eaeaea;
-    }
-    .stamp-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 20px rgba(0,0,0,0.1);
-        border-color: #d1d1d1;
-    }
-    
-    /* Typography Hierarchy */
     .grid-stamp-title {
-        font-size: 14px !important;
-        font-weight: 700;
-        color: #1a1a1a;
-        line-height: 1.3;
-        margin-top: 10px;
-        height: 2.6em;
+        font-size: 13px !important;
+        font-weight: 600;
+        line-height: 1.2;
+        margin-bottom: 5px;
+        height: 3.2em;
         overflow: hidden;
     }
-    .price-tag {
-        font-size: 16px;
-        color: #2e7d32;
-        font-weight: 800;
-        margin-top: 5px;
+    .row-title {
+        font-size: 16px !important;
+        font-weight: bold;
+        margin: 0;
     }
-    .metadata-label {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #757575;
-        font-weight: 600;
+    .row-metadata {
+        font-size: 13px;
+        color: #555;
+        margin-top: 2px;
     }
-    
-    /* Sidebar Polish */
-    section[data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #eaeaea;
+    .stamp-card {
+        border-top: 1px solid #dee2e6;
+        padding: 10px 5px;
+        margin-bottom: 5px;
     }
-    
-    /* Custom Button Styling */
+    .estate-intro {
+        color: #666;
+        font-style: italic;
+        text-align: center;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
     div.stButton > button {
-        border-radius: 8px;
-        border: 1px solid #dcdfe4;
-        background-color: white;
-        color: #374151;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-    div.stButton > button:hover {
-        border-color: #2563eb;
-        color: #2563eb;
-        background-color: #eff6ff;
-    }
-
-    /* Image Framing */
-    .img-frame {
-        background-color: #f3f4f6;
-        border-radius: 8px;
-        padding: 10px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        width: 100%;
+        padding: 8px 1px;
+        font-size: 11px;
+        white-space: nowrap;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -102,8 +63,8 @@ def load_data():
 df_raw = load_data()
 
 # --- SIDEBAR ---
-st.sidebar.title("🔍 Controls")
-st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='background-color:#2563eb;color:white;padding:10px;border-radius:8px;text-align:center;font-weight:bold;margin-bottom:20px;'>⬆️ Return to Top</div></a>", unsafe_allow_html=True)
+st.sidebar.title("🔍 Gallery Controls")
+st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='background-color:#f0f2f6;padding:10px;border-radius:5px;text-align:center;border:1px solid #dcdfe4;font-weight:bold;margin-bottom:10px;'>⬆️ Return to Top</div></a>", unsafe_allow_html=True)
 
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
@@ -120,9 +81,9 @@ if col_v3.button("Details ☷"):
 
 st.sidebar.markdown("---")
 sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
-
 st.sidebar.markdown("---")
-if st.sidebar.button("❌ Reset Filters"):
+
+if st.sidebar.button("❌ Reset All Filters"):
     st.session_state.limit = 48
     st.rerun()
 
@@ -134,19 +95,19 @@ f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_
 f_cond = st.sidebar.multiselect("Condition", get_opts('item_specifics_04_condition'))
 f_cent = st.sidebar.multiselect("Centering", get_opts('item_specifics_08_centering'))
 f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'))
-f_has_cert = st.sidebar.selectbox("Has Certificate?", ["All", "Yes", "No"])
+f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
 
 # --- TOP SECTION ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
 if os.path.exists("racingstamp.png"):
-    _, cent_co, _ = st.columns([1, 0.5, 1])
-    cent_co.image("racingstamp.png", use_container_width=True)
+    _, cent_co, _ = st.columns([1, 1, 1])
+    cent_co.image("racingstamp.png", width=200)
 
-st.markdown("<h1 style='text-align: center; color: #111827; font-size: 42px;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
-st.markdown('<p style="color: #6b7280; font-style: italic; text-align: center; max-width: 800px; margin: 0 auto 30px auto;">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
+st.markdown('<p class="estate-intro">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
-search = st.text_input("", placeholder="🔍 Search catalog numbers, countries, or names...", label_visibility="collapsed")
+search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
 
 # --- FILTERING ---
 df = df_raw.copy()
@@ -167,11 +128,10 @@ elif f_has_cert == "No":
 if sort_option == "Low to High": df = df.sort_values("buyout_price")
 elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending=False)
 
-st.write(f"Showing **{len(df)}** stamps")
-
+st.info(f"Showing {len(df)} items match your selection.")
 df_show = df.head(st.session_state.limit)
 
-# --- DISPLAY LAYOUTS ---
+# --- DISPLAY ---
 if st.session_state.view_mode == 'Grid':
     grid_cols = st.columns(4)
     for i, (_, row) in enumerate(df_show.iterrows()):
@@ -179,62 +139,60 @@ if st.session_state.view_mode == 'Grid':
             st.markdown('<div class="stamp-card">', unsafe_allow_html=True)
             imgs = str(row['image']).split('||')
             if imgs[0].startswith('http'):
-                st.markdown('<div class="img-frame">', unsafe_allow_html=True)
                 st.image(imgs[0], use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-            
-            st.markdown(f'<div class="grid-stamp-title">{row["name"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="price-tag">${row["formatted_price"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metadata-label">CAT # {row["item_specifics_02_catalog_number"]}</div>', unsafe_allow_html=True)
-            
-            with st.expander("Quick View"):
-                st.caption(row['description'][:150] + "...")
                 if len(imgs) > 1:
-                    st.image(imgs[1], use_container_width=True)
+                    with st.expander("📷 Photos"):
+                        sub = st.columns(3)
+                        for j, url in enumerate(imgs[1:]):
+                            sub[j % 3].image(url, use_container_width=True)
+            st.markdown(f'<p class="grid-stamp-title">{row["name"]}</p>', unsafe_allow_html=True)
+            st.write(f"**${row['formatted_price']}**")
+            with st.expander("Details"):
+                st.write(f"**Cat #:** {row['item_specifics_02_catalog_number']}")
+                st.write(f"**Cond:** {row['item_specifics_04_condition']}")
+                st.caption(row['description'][:100] + "...")
             st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.view_mode == 'Rows':
     for _, row in df_show.iterrows():
         with st.container():
-            st.markdown('<div class="stamp-card">', unsafe_allow_html=True)
-            c1, c2 = st.columns([0.8, 3.2])
+            c1, c2 = st.columns([0.6, 3.4])
             with c1:
                 imgs = str(row['image']).split('||')
                 if imgs[0].startswith('http'):
-                    st.image(imgs[0], width=140)
+                    st.image(imgs[0], width=110)
             with c2:
-                st.markdown(f'<div style="display: flex; justify-content: space-between;"><h3>{row["name"]}</h3><h3 style="color:#2e7d32;">${row["formatted_price"]}</h3></div>', unsafe_allow_html=True)
-                st.markdown(f"**Country:** {row['item_specifics_01_country']} | **Cat #:** {row['item_specifics_02_catalog_number']} | **Condition:** {row['item_specifics_04_condition']}")
-                with st.expander("Full Details"):
+                st.markdown(f'<p class="row-title">{row["name"]} <span style="float:right;">${row["formatted_price"]}</span></p>', unsafe_allow_html=True)
+                st.markdown(f'<p class="row-metadata"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
+                with st.expander("📄 Details & Photos"):
                     st.write(row['description'])
                     if len(imgs) > 1:
-                        sub = st.columns(4)
+                        sub = st.columns(6)
                         for j, url in enumerate(imgs[1:]):
-                            sub[j % 4].image(url, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+                            sub[j % 6].image(url, use_container_width=True)
+            st.markdown('<div style="border-top:1px solid #eee; margin: 5px 0;"></div>', unsafe_allow_html=True)
 
 else: # Details View
-    for _, row in df_show.iterrows():
-        line_text = f"{row['name'][:40]}... | {row['item_specifics_01_country']} | ${row['formatted_price']}"
+    for i, row in df_show.iterrows():
+        line_text = f"{row['name'][:45]}... | {row['item_specifics_01_country']} | Cat: {row['item_specifics_02_catalog_number']} | ${row['formatted_price']}"
         with st.expander(line_text):
-            st.markdown(f"### {row['name']}")
             imgs = str(row['image']).split('||')
-            e1, e2 = st.columns([1, 2])
-            with e1:
-                if imgs[0].startswith('http'): st.image(imgs[0], use_container_width=True)
-            with e2:
-                st.write(f"**Catalog Number:** {row['item_specifics_02_catalog_number']}")
-                st.write(f"**Condition:** {row['item_specifics_04_condition']}")
-                st.write(row['description'])
+            if imgs[0].startswith('http'):
+                st.image(imgs[0], width=300)
+            st.markdown(f"**Full Name:** {row['name']}")
+            st.markdown(f"**Condition:** {row['item_specifics_04_condition']}")
+            st.markdown(f"**Description:** {row['description']}")
             if len(imgs) > 1:
                 st.markdown("---")
                 sub_d = st.columns(4)
                 for j, url in enumerate(imgs[1:]):
                     sub_d[j % 4].image(url, use_container_width=True)
+        st.markdown('<div style="border-top:1px solid #eee; margin: 2px 0;"></div>', unsafe_allow_html=True)
 
 # Infinite Scroll
 if len(df) > st.session_state.limit:
-    if st.button(f"Show More Stamps ({len(df) - st.session_state.limit} remaining)"):
+    remaining = len(df) - st.session_state.limit
+    if st.button(f"🔽 Load more items ({remaining} left)"):
         st.session_state.limit += 48
         st.rerun()
 

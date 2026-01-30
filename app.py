@@ -6,44 +6,59 @@ from difflib import get_close_matches
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Stable CSS (Minimal)
+# 2. Refined CSS (Typography & Spacing focus)
 st.markdown("""
     <style>
+    /* Global Typography Refinements */
     .grid-stamp-title {
-        font-size: 13px !important;
-        font-weight: 600;
-        line-height: 1.2;
-        margin-bottom: 5px;
-        height: 3.2em;
+        font-size: 14px !important;
+        font-weight: 700; /* Bold Name */
+        color: #1a1a1a;
+        line-height: 1.3;
+        margin-bottom: 4px;
+        height: 2.8em;
         overflow: hidden;
     }
     .row-title {
-        font-size: 16px !important;
-        font-weight: bold;
+        font-size: 17px !important;
+        font-weight: 700;
+        color: #1a1a1a;
         margin: 0;
     }
-    .row-metadata {
-        font-size: 13px;
-        color: #555;
-        margin-top: 2px;
+    .price-text {
+        font-size: 16px;
+        font-weight: 800; /* Extra Bold Price */
+        color: #1e7e34; /* Success Green */
+        margin-bottom: 8px;
+    }
+    .row-metadata, .muted-text {
+        font-size: 12px;
+        color: #64748b; /* Muted Slate Color */
+        font-weight: 400;
+        letter-spacing: 0.2px;
     }
     .stamp-card {
-        border-top: 1px solid #dee2e6;
-        padding: 10px 5px;
-        margin-bottom: 5px;
+        border-top: 1px solid #f1f5f9;
+        padding: 12px 5px;
+        margin-bottom: 10px;
     }
     .estate-intro {
-        color: #666;
+        color: #475569;
         font-style: italic;
         text-align: center;
-        margin-bottom: 15px;
-        font-size: 14px;
+        margin-bottom: 25px;
+        font-size: 15px;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
     }
+    /* Standardized Buttons */
     div.stButton > button {
         width: 100%;
         padding: 8px 1px;
         font-size: 11px;
         white-space: nowrap;
+        border-radius: 6px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -64,7 +79,7 @@ df_raw = load_data()
 
 # --- SIDEBAR ---
 st.sidebar.title("🔍 Gallery Controls")
-st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='background-color:#f0f2f6;padding:10px;border-radius:5px;text-align:center;border:1px solid #dcdfe4;font-weight:bold;margin-bottom:10px;'>⬆️ Return to Top</div></a>", unsafe_allow_html=True)
+st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='background-color:#f0f2f6;padding:10px;border-radius:8px;text-align:center;border:1px solid #dcdfe4;font-weight:bold;margin-bottom:10px;'>⬆️ Return to Top</div></a>", unsafe_allow_html=True)
 
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
@@ -104,7 +119,7 @@ if os.path.exists("racingstamp.png"):
     _, cent_co, _ = st.columns([1, 1, 1])
     cent_co.image("racingstamp.png", width=200)
 
-st.markdown("<h1 style='text-align: center;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #0f172a;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
 st.markdown('<p class="estate-intro">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
@@ -146,10 +161,9 @@ if st.session_state.view_mode == 'Grid':
                         for j, url in enumerate(imgs[1:]):
                             sub[j % 3].image(url, use_container_width=True)
             st.markdown(f'<p class="grid-stamp-title">{row["name"]}</p>', unsafe_allow_html=True)
-            st.write(f"**${row['formatted_price']}**")
+            st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             with st.expander("Details"):
-                st.write(f"**Cat #:** {row['item_specifics_02_catalog_number']}")
-                st.write(f"**Cond:** {row['item_specifics_04_condition']}")
+                st.markdown(f'<p class="muted-text"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]}<br><b>Cond:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
                 st.caption(row['description'][:100] + "...")
             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -162,7 +176,7 @@ elif st.session_state.view_mode == 'Rows':
                 if imgs[0].startswith('http'):
                     st.image(imgs[0], width=110)
             with c2:
-                st.markdown(f'<p class="row-title">{row["name"]} <span style="float:right;">${row["formatted_price"]}</span></p>', unsafe_allow_html=True)
+                st.markdown(f'<div style="display:flex; justify-content:space-between; align-items:center;"><p class="row-title">{row["name"]}</p><p class="price-text">${row["formatted_price"]}</p></div>', unsafe_allow_html=True)
                 st.markdown(f'<p class="row-metadata"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
                 with st.expander("📄 Details & Photos"):
                     st.write(row['description'])
@@ -170,24 +184,26 @@ elif st.session_state.view_mode == 'Rows':
                         sub = st.columns(6)
                         for j, url in enumerate(imgs[1:]):
                             sub[j % 6].image(url, use_container_width=True)
-            st.markdown('<div style="border-top:1px solid #eee; margin: 5px 0;"></div>', unsafe_allow_html=True)
+            st.markdown('<div style="border-top:1px solid #f1f5f9; margin: 10px 0;"></div>', unsafe_allow_html=True)
 
 else: # Details View
     for i, row in df_show.iterrows():
-        line_text = f"{row['name'][:45]}... | {row['item_specifics_01_country']} | Cat: {row['item_specifics_02_catalog_number']} | ${row['formatted_price']}"
+        # Using muted color for metadata in the expander title
+        line_text = f"**{row['name'][:40]}...** | ${row['formatted_price']}"
         with st.expander(line_text):
             imgs = str(row['image']).split('||')
             if imgs[0].startswith('http'):
                 st.image(imgs[0], width=300)
-            st.markdown(f"**Full Name:** {row['name']}")
-            st.markdown(f"**Condition:** {row['item_specifics_04_condition']}")
-            st.markdown(f"**Description:** {row['description']}")
+            st.markdown(f"### {row['name']}")
+            st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="muted-text"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
+            st.write(row['description'])
             if len(imgs) > 1:
                 st.markdown("---")
                 sub_d = st.columns(4)
                 for j, url in enumerate(imgs[1:]):
                     sub_d[j % 4].image(url, use_container_width=True)
-        st.markdown('<div style="border-top:1px solid #eee; margin: 2px 0;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="border-top:1px solid #f1f5f9; margin: 2px 0;"></div>', unsafe_allow_html=True)
 
 # Infinite Scroll
 if len(df) > st.session_state.limit:

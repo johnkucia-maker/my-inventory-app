@@ -14,7 +14,7 @@ if 'view_mode' not in st.session_state:
 if 'limit' not in st.session_state: 
     st.session_state.limit = 48
 
-# 3. Dynamic Theme CSS Logic
+# 3. Forced Theme Engine (Using !important to ensure override)
 if st.session_state.dark_mode:
     bg_color = "#0f172a"
     sidebar_bg = "#1e293b"
@@ -27,83 +27,72 @@ else:
     bg_color = "#ffffff"
     sidebar_bg = "#f8fafc"
     card_border = "#e2e8f0"
-    title_color = "#64748b"
-    muted_color = "#94a3b8"
-    price_color = "#52b788" # Unified desaturated green
+    title_color = "#64748b"  # Desired Light Slate
+    muted_color = "#94a3b8"  # Desired Light Muted
+    price_color = "#52b788"  # Desaturated Green
     text_color = "#1e293b"
 
 st.markdown(f"""
     <style>
+    /* Global Background & Text */
     .stApp {{
-        background-color: {bg_color};
-        color: {text_color};
+        background-color: {bg_color} !important;
+        color: {text_color} !important;
     }}
     
-    .sidebar-title {{
+    /* Sidebar Layout */
+    [data-testid="stSidebar"] {{
+        background-color: {sidebar_bg} !important;
+    }}
+    .centered-sidebar-title {{
         text-align: center !important;
-        width: 100%;
-        color: {title_color};
+        color: {title_color} !important;
+        font-weight: bold;
+        font-size: 24px;
+        margin-bottom: 20px;
     }}
     
-    /* Unified Typography across ALL modes */
-    .grid-stamp-title, .row-title, .list-title {{
+    /* Typography Overrides */
+    .grid-stamp-title, .row-title, .list-title, .st-emotion-cache-pcy066 {{
         font-size: 14px !important;
-        font-weight: 700;
+        font-weight: 700 !important;
         color: {title_color} !important;
-        line-height: 1.3;
-        margin-bottom: 4px;
     }}
     .row-title {{ font-size: 17px !important; }}
     
     .price-text {{
-        font-size: 16px;
-        font-weight: 800;
+        font-size: 16px !important;
+        font-weight: 800 !important;
         color: {price_color} !important;
-        margin-bottom: 8px;
     }}
     
-    .row-metadata, .muted-text, .stCaption {{
-        font-size: 12px;
+    .muted-text, .row-metadata, .stCaption, p {{
+        color: {muted_color} if '{st.session_state.dark_mode}' == 'True' else {text_color};
+    }}
+
+    .muted-label {{
         color: {muted_color} !important;
-        font-weight: 400;
-        letter-spacing: 0.2px;
+        font-size: 12px !important;
     }}
     
-    .stamp-card, .stExpander {{
+    /* Expander/List Layout Overrides */
+    .stExpander {{
+        border: none !important;
         border-top: 1px solid {card_border} !important;
         background-color: transparent !important;
     }}
     
-    [data-testid="stSidebar"] {{
-        background-color: {sidebar_bg};
-    }}
-
     .top-button {{
-        background-color: #cbd5e1;
-        color: #1e293b;
+        background-color: #cbd5e1 !important;
+        color: #1e293b !important;
         padding: 10px;
         border-radius: 8px;
         text-align: center;
         font-weight: bold;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         text-decoration: none;
         display: block;
         border: 1px solid #94a3b8;
-    }}
-    
-    .filter-tip {{
-        font-size: 11px;
-        color: {muted_color};
-        margin-top: 10px;
-        text-align: center;
-    }}
-
-    div.stButton > button {{
-        width: 100%;
-        padding: 8px 1px;
-        font-size: 11px;
-        white-space: nowrap;
-        border-radius: 6px;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -123,7 +112,7 @@ def load_data():
 df_raw = load_data()
 
 # --- SIDEBAR ---
-st.sidebar.markdown("<h2 class='sidebar-title'>Gallery Controls</h2>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<div class='centered-sidebar-title'>Gallery Controls</div>", unsafe_allow_html=True)
 st.sidebar.markdown("<a href='#top' class='top-button'>⬆️ Return to Top</a>", unsafe_allow_html=True)
 
 col_v1, col_v2, col_v3 = st.sidebar.columns(3)
@@ -149,7 +138,7 @@ f_cent = st.sidebar.multiselect("Centering", get_opts('item_specifics_08_centeri
 f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'))
 f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
 
-st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options.</p>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<p style="font-size:11px; color:{muted_color}; text-align:center; margin-top:10px;">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options.</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 if st.sidebar.button("🌓 Toggle Dark/Light Mode"):
@@ -174,15 +163,13 @@ if search:
     s_term = search.lower()
     df = df[df['search_blob'].apply(lambda x: s_term in x or len(get_close_matches(s_term, x.split(), n=1, cutoff=0.7)) > 0)]
 
+# Filter logic... (same as before)
 if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
 if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
 if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]
 if f_form: df = df[df['item_specifics_05_stamp_format'].isin(f_form)]
-
-if f_has_cert == "Yes": 
-    df = df[df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
-elif f_has_cert == "No": 
-    df = df[~df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
+if f_has_cert == "Yes": df = df[df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
+elif f_has_cert == "No": df = df[~df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
 
 if sort_option == "Low to High": df = df.sort_values("buyout_price")
 elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending=False)
@@ -195,7 +182,7 @@ if st.session_state.view_mode == 'Grid':
     grid_cols = st.columns(4)
     for i, (_, row) in enumerate(df_show.iterrows()):
         with grid_cols[i % 4]:
-            st.markdown('<div class="stamp-card">', unsafe_allow_html=True)
+            st.markdown(f'<div style="border-top: 1px solid {card_border}; padding-top:10px; margin-bottom:20px;">', unsafe_allow_html=True)
             imgs = str(row['image']).split('||')
             if imgs[0].startswith('http'):
                 st.image(imgs[0], use_container_width=True)
@@ -207,7 +194,7 @@ if st.session_state.view_mode == 'Grid':
             st.markdown(f'<p class="grid-stamp-title">{row["name"]}</p>', unsafe_allow_html=True)
             st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             with st.expander("Details"):
-                st.markdown(f'<p class="muted-text"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]}<br><b>Cond:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
+                st.markdown(f'<p class="muted-label"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]}<br><b>Cond:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
                 st.caption(row['description'][:100] + "...")
             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -221,7 +208,7 @@ elif st.session_state.view_mode == 'Rows':
                     st.image(imgs[0], width=110)
             with c2:
                 st.markdown(f'<div style="display:flex; justify-content:space-between; align-items:center;"><p class="row-title">{row["name"]}</p><p class="price-text">${row["formatted_price"]}</p></div>', unsafe_allow_html=True)
-                st.markdown(f'<p class="row-metadata"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
+                st.markdown(f'<p class="muted-label"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
                 with st.expander("📄 Details & Photos"):
                     st.write(row['description'])
                     if len(imgs) > 1:
@@ -237,9 +224,9 @@ else: # List View
             imgs = str(row['image']).split('||')
             if imgs[0].startswith('http'):
                 st.image(imgs[0], width=300)
-            st.markdown(f"<p class='list-title'>{row['name']}</p>", unsafe_allow_html=True)
-            st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
-            st.markdown(f'<p class="muted-text"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
+            st.markdown(f"<p class='list-title' style='font-size:20px !important;'>{row['name']}</p>", unsafe_allow_html=True)
+            st.markdown(f'<p class="price-text" style="font-size:20px !important;">${row["formatted_price"]}</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="muted-label" style="font-size:14px !important;"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
             st.write(row['description'])
             if len(imgs) > 1:
                 st.markdown("---")

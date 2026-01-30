@@ -14,19 +14,16 @@ st.markdown("""
         width: 100%;
         color: #64748b;
     }
-    .filter-header {
-        font-size: 24px !important;
-        font-weight: 800 !important;
-        color: #475569 !important;
-        margin-bottom: 15px !important;
-    }
-    .filter-subheader {
+    /* Unified Filter Labels */
+    .unified-label {
         font-size: 16px !important;
         font-weight: 700 !important;
         color: #64748b !important;
-        margin-top: 10px !important;
+        margin-top: 15px !important;
         margin-bottom: 5px !important;
+        display: block;
     }
+    /* Indent Checkboxes for hierarchy */
     [data-testid="stCheckbox"] {
         margin-left: 15px !important;
     }
@@ -99,24 +96,20 @@ def get_opts(col):
     vals = df_raw[col].unique()
     return sorted([str(x) for x in vals if str(x).strip() != ''])
 
-# --- Grouped Filter Section ---
-st.sidebar.markdown("<p class='filter-header'>Filter</p>", unsafe_allow_html=True)
+st.sidebar.markdown("<h3 style='color: #475569; margin-bottom: 0;'>Filter</h3>", unsafe_allow_html=True)
 
-# Condition Checkboxes
-st.sidebar.markdown("<p class='filter-subheader'>Condition</p>", unsafe_allow_html=True)
+# 1. Condition
+st.sidebar.markdown("<span class='unified-label'>Condition</span>", unsafe_allow_html=True)
 f_cond = []
 cond_options = get_opts('item_specifics_04_condition')
 for opt in cond_options:
     if st.sidebar.checkbox(opt, key=f"cond_{opt}"):
         f_cond.append(opt)
 
-# Centering Checkboxes (Sorted Best to Worst)
-st.sidebar.markdown("<p class='filter-subheader'>Centering</p>", unsafe_allow_html=True)
-centering_order = [
-    "superb", "xf-superb", "xf", "vf-xf", "vf", "f-vf", "vg-below", "not-specified"
-]
+# 2. Centering
+st.sidebar.markdown("<span class='unified-label'>Centering</span>", unsafe_allow_html=True)
+centering_order = ["superb", "xf-superb", "xf", "vf-xf", "vf", "f-vf", "vg-below", "not-specified"]
 actual_centering_opts = get_opts('item_specifics_08_centering')
-# Reorder based on your list, keeping any that might not be in the list at the end
 sorted_cent_opts = [o for o in centering_order if o in actual_centering_opts] + \
                    [o for o in actual_centering_opts if o not in centering_order]
 
@@ -125,22 +118,26 @@ for opt in sorted_cent_opts:
     if st.sidebar.checkbox(opt, key=f"cent_{opt}"):
         f_cent.append(opt)
 
-# Dropdown Filters
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
-f_country = st.sidebar.multiselect("Location", get_opts('item_specifics_01_country'), key='ms_country')
-f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'), key='ms_type')
-f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'), key='ms_form')
-f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"], key='sb_cert')
+# 3. Dropdowns with unified titles
+st.sidebar.markdown("<span class='unified-label'>Location</span>", unsafe_allow_html=True)
+f_country = st.sidebar.multiselect("Select Location", get_opts('item_specifics_01_country'), key='ms_country', label_visibility="collapsed")
 
-# Hard Reset Functionality
+st.sidebar.markdown("<span class='unified-label'>Stamp Type</span>", unsafe_allow_html=True)
+f_type = st.sidebar.multiselect("Select Stamp Type", get_opts('item_specifics_03_stamp_type'), key='ms_type', label_visibility="collapsed")
+
+st.sidebar.markdown("<span class='unified-label'>Stamp Format</span>", unsafe_allow_html=True)
+f_form = st.sidebar.multiselect("Select Stamp Format", get_opts('item_specifics_05_stamp_format'), key='ms_form', label_visibility="collapsed")
+
+st.sidebar.markdown("<span class='unified-label'>Has a Certificate?</span>", unsafe_allow_html=True)
+f_has_cert = st.sidebar.selectbox("Select Cert Status", ["All", "Yes", "No"], key='sb_cert', label_visibility="collapsed")
+
+# Hard Reset Logic
 if st.sidebar.button("❌ Reset All Filters"):
     for key in list(st.session_state.keys()):
-        if key.startswith("cond_") or key.startswith("cent_") or key in ['ms_country', 'ms_type', 'ms_form', 'sb_cert']:
+        if any(key.startswith(prefix) for prefix in ['cond_', 'cent_', 'ms_', 'sb_']):
             del st.session_state[key]
     st.session_state.limit = 48
     st.rerun()
-
-st.sidebar.markdown('<p style="font-size:11px; color:#94a3b8; text-align:center;">💡 Selection persists until reset.</p>', unsafe_allow_html=True)
 
 # --- MAIN CONTENT ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
@@ -153,7 +150,7 @@ st.markdown('<p class="estate-intro">Acquired by Richard Kucia 1940-2024, now he
 
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
 
-# --- FILTERING ---
+# Filtering logic
 df = df_raw.copy()
 if search:
     s_term = search.lower()
@@ -173,7 +170,7 @@ elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending
 st.info(f"Showing {len(df)} items match your selection.")
 df_show = df.head(st.session_state.limit)
 
-# --- DISPLAY ---
+# Grid/Row/List rendering (logic preserved)
 if st.session_state.view_mode == 'Grid':
     grid_cols = st.columns(4)
     for i, (_, row) in enumerate(df_show.iterrows()):

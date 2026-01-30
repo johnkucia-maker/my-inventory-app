@@ -75,13 +75,13 @@ st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='ba
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
 
-# Standardized Layout Toggle Buttons with requested icons
+# Layout Toggle Buttons with final icon set
 col_v1, col_v2, col_v3 = st.sidebar.columns(3)
-if col_v1.button("Grid ⠇⠇"):
+if col_v1.button("Grid ⣿"):
     st.session_state.view_mode = 'Grid'
 if col_v2.button("Rows ☰"):
     st.session_state.view_mode = 'Rows'
-if col_v3.button("Details ⁝⸗"):
+if col_v3.button("Details ☷"):
     st.session_state.view_mode = 'Details'
 
 st.sidebar.markdown("---")
@@ -89,7 +89,7 @@ sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "H
 st.sidebar.markdown("---")
 
 if st.sidebar.button("❌ Reset All Filters"):
-    st.session_state.limit = 24
+    st.session_state.limit = 48
     st.rerun()
 
 def get_opts(col):
@@ -136,11 +136,11 @@ elif f_has_cert == "No":
 if sort_option == "Low to High": df = df.sort_values("buyout_price")
 elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending=False)
 
-st.info(f"Showing {len(df)} items in {st.session_state.view_mode} mode.")
+st.info(f"Showing {len(df)} items match your selection.")
 
-# --- PAGINATION ---
+# --- PAGINATION (Set to 48) ---
 if 'limit' not in st.session_state: 
-    st.session_state.limit = 24
+    st.session_state.limit = 48
 df_show = df.head(st.session_state.limit)
 
 # --- DISPLAY ---
@@ -187,30 +187,6 @@ elif st.session_state.view_mode == 'Rows':
 else: # "Details" View
     for _, row in df_show.iterrows():
         with st.container():
-            # Added Country to the text-line summary
             line_text = f"**{row['name'][:50]}...** | {row['item_specifics_01_country']} | Cat #: {row['item_specifics_02_catalog_number']} | **${row['formatted_price']}**"
             with st.expander(line_text):
                 imgs = str(row['image']).split('||')
-                e1, e2 = st.columns([1, 2])
-                with e1:
-                    if imgs[0].startswith('http'):
-                        st.image(imgs[0], use_container_width=True)
-                with e2:
-                    st.write(f"**Full Name:** {row['name']}")
-                    st.write(f"**Condition:** {row['item_specifics_04_condition']}")
-                    st.write(f"**Description:** {row['description']}")
-                if len(imgs) > 1:
-                    st.write("**Additional Images:**")
-                    sub = st.columns(6)
-                    for j, url in enumerate(imgs[1:]):
-                        sub[j % 6].image(url, use_container_width=True)
-            st.markdown('<div style="border-top:1px solid #eee; margin: 2px 0;"></div>', unsafe_allow_html=True)
-
-# Infinite Scroll Trigger
-if len(df) > st.session_state.limit:
-    if st.button("🔽 Load more items"):
-        st.session_state.limit += 24
-        st.rerun()
-
-st.write("---")
-st.caption("RRKLT Estate Collection, formerly of Cranberry Township, PA.")

@@ -14,7 +14,6 @@ st.markdown("""
         width: 100%;
         color: #64748b;
     }
-    /* Unified Filter Labels */
     .unified-label {
         font-size: 16px !important;
         font-weight: 700 !important;
@@ -23,7 +22,6 @@ st.markdown("""
         margin-bottom: 5px !important;
         display: block;
     }
-    /* Indent Checkboxes for hierarchy */
     [data-testid="stCheckbox"] {
         margin-left: 15px !important;
     }
@@ -56,6 +54,12 @@ st.markdown("""
     div.stButton > button {
         width: 100%;
         border-radius: 6px;
+    }
+    .filter-tip {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 10px;
+        text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -118,7 +122,13 @@ for opt in sorted_cent_opts:
     if st.sidebar.checkbox(opt, key=f"cent_{opt}"):
         f_cent.append(opt)
 
-# 3. Dropdowns with unified titles
+if st.sidebar.button("🔄 Reset Checkboxes"):
+    for key in list(st.session_state.keys()):
+        if key.startswith('cond_') or key.startswith('cent_'):
+            del st.session_state[key]
+    st.rerun()
+
+# 3. Dropdowns
 st.sidebar.markdown("<span class='unified-label'>Location</span>", unsafe_allow_html=True)
 f_country = st.sidebar.multiselect("Select Location", get_opts('item_specifics_01_country'), key='ms_country', label_visibility="collapsed")
 
@@ -131,13 +141,14 @@ f_form = st.sidebar.multiselect("Select Stamp Format", get_opts('item_specifics_
 st.sidebar.markdown("<span class='unified-label'>Has a Certificate?</span>", unsafe_allow_html=True)
 f_has_cert = st.sidebar.selectbox("Select Cert Status", ["All", "Yes", "No"], key='sb_cert', label_visibility="collapsed")
 
-# Hard Reset Logic
-if st.sidebar.button("❌ Reset All Filters"):
-    for key in list(st.session_state.keys()):
-        if any(key.startswith(prefix) for prefix in ['cond_', 'cent_', 'ms_', 'sb_']):
+if st.sidebar.button("🔄 Reset Dropdowns"):
+    for key in ['ms_country', 'ms_type', 'ms_form', 'sb_cert']:
+        if key in st.session_state:
             del st.session_state[key]
     st.session_state.limit = 48
     st.rerun()
+
+st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options in dropdowns.</p>', unsafe_allow_html=True)
 
 # --- MAIN CONTENT ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
@@ -146,7 +157,7 @@ if os.path.exists("racingstamp.png"):
     cent_co.image("racingstamp.png", width=200)
 
 st.markdown("<h1 style='text-align: center; color: #64748b;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
-st.markdown('<p class="estate-intro">Acquired by Richard Kucia 1940-2024, now held by the Richard Kucia Trust.</p>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; font-style:italic; color:#64748b; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto;">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
 
@@ -170,7 +181,7 @@ elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending
 st.info(f"Showing {len(df)} items match your selection.")
 df_show = df.head(st.session_state.limit)
 
-# Grid/Row/List rendering (logic preserved)
+# Grid Rendering
 if st.session_state.view_mode == 'Grid':
     grid_cols = st.columns(4)
     for i, (_, row) in enumerate(df_show.iterrows()):
@@ -227,4 +238,4 @@ if len(df) > st.session_state.limit:
         st.rerun()
 
 st.write("---")
-st.caption("RRKLT Estate Collection, Pennsylvania.")
+st.caption("RRKLT Estate Collection, formerly of Cranberry Township, PA.")

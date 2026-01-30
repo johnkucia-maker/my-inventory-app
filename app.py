@@ -14,7 +14,6 @@ st.markdown("""
         width: 100%;
         color: #64748b;
     }
-    /* Hierarchy Styling */
     .filter-header {
         font-size: 24px !important;
         font-weight: 800 !important;
@@ -28,11 +27,9 @@ st.markdown("""
         margin-top: 10px !important;
         margin-bottom: 5px !important;
     }
-    /* Indent Checkboxes */
     [data-testid="stCheckbox"] {
         margin-left: 15px !important;
     }
-    
     .grid-stamp-title {
         font-size: 14px !important;
         font-weight: 700;
@@ -42,37 +39,10 @@ st.markdown("""
         height: 2.8em;
         overflow: hidden;
     }
-    .row-title, .list-header-title {
-        font-size: 17px !important;
-        font-weight: 700;
-        color: #64748b; 
-        margin: 0;
-    }
     .price-text {
         font-size: 16px;
         font-weight: 800;
         color: #52b788; 
-        margin-bottom: 8px;
-    }
-    .row-metadata, .muted-text {
-        font-size: 12px;
-        color: #94a3b8; 
-        font-weight: 400;
-        letter-spacing: 0.2px;
-    }
-    .stamp-card {
-        border-top: 1px solid #e2e8f0;
-        padding: 12px 5px;
-        margin-bottom: 10px;
-    }
-    .estate-intro {
-        color: #64748b;
-        font-style: italic;
-        text-align: center;
-        margin-bottom: 25px;
-        font-size: 15px;
-        max-width: 800px;
-        margin: 0 auto;
     }
     .top-button {
         background-color: #cbd5e1;
@@ -86,17 +56,8 @@ st.markdown("""
         text-decoration: none;
         display: block;
     }
-    .filter-tip {
-        font-size: 11px;
-        color: #94a3b8;
-        margin-top: 10px;
-        text-align: center;
-    }
     div.stButton > button {
         width: 100%;
-        padding: 8px 1px;
-        font-size: 11px;
-        white-space: nowrap;
         border-radius: 6px;
     }
     </style>
@@ -149,45 +110,46 @@ for opt in cond_options:
     if st.sidebar.checkbox(opt, key=f"cond_{opt}"):
         f_cond.append(opt)
 
-# Centering Checkboxes
+# Centering Checkboxes (Sorted Best to Worst)
 st.sidebar.markdown("<p class='filter-subheader'>Centering</p>", unsafe_allow_html=True)
+centering_order = [
+    "superb", "xf-superb", "xf", "vf-xf", "vf", "f-vf", "vg-below", "not-specified"
+]
+actual_centering_opts = get_opts('item_specifics_08_centering')
+# Reorder based on your list, keeping any that might not be in the list at the end
+sorted_cent_opts = [o for o in centering_order if o in actual_centering_opts] + \
+                   [o for o in actual_centering_opts if o not in centering_order]
+
 f_cent = []
-cent_options = get_opts('item_specifics_08_centering')
-for opt in cent_options:
+for opt in sorted_cent_opts:
     if st.sidebar.checkbox(opt, key=f"cent_{opt}"):
         f_cent.append(opt)
 
 # Dropdown Filters
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
-f_country = st.sidebar.multiselect("Country", get_opts('item_specifics_01_country'), key='ms_country')
+f_country = st.sidebar.multiselect("Location", get_opts('item_specifics_01_country'), key='ms_country')
 f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'), key='ms_type')
 f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'), key='ms_form')
 f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"], key='sb_cert')
 
-# Fixed Reset Functionality
+# Hard Reset Functionality
 if st.sidebar.button("❌ Reset All Filters"):
-    # Clear session state keys to reset widgets
-    keys_to_reset = ['ms_country', 'ms_type', 'ms_form', 'sb_cert', 'limit']
-    for opt in cond_options: keys_to_reset.append(f"cond_{opt}")
-    for opt in cent_options: keys_to_reset.append(f"cent_{opt}")
-    
-    for key in keys_to_reset:
-        if key in st.session_state:
+    for key in list(st.session_state.keys()):
+        if key.startswith("cond_") or key.startswith("cent_") or key in ['ms_country', 'ms_type', 'ms_form', 'sb_cert']:
             del st.session_state[key]
-            
     st.session_state.limit = 48
     st.rerun()
 
-st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options in dropdowns.</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p style="font-size:11px; color:#94a3b8; text-align:center;">💡 Selection persists until reset.</p>', unsafe_allow_html=True)
 
-# --- TOP SECTION ---
+# --- MAIN CONTENT ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 if os.path.exists("racingstamp.png"):
     _, cent_co, _ = st.columns([1, 1, 1])
     cent_co.image("racingstamp.png", width=200)
 
 st.markdown("<h1 style='text-align: center; color: #64748b;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
-st.markdown('<p class="estate-intro">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
+st.markdown('<p class="estate-intro">Acquired by Richard Kucia 1940-2024, now held by the Richard Kucia Trust.</p>', unsafe_allow_html=True)
 
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
 
@@ -202,7 +164,6 @@ if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
 if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]
 if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
 if f_form: df = df[df['item_specifics_05_stamp_format'].isin(f_form)]
-
 if f_has_cert == "Yes": df = df[df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
 elif f_has_cert == "No": df = df[~df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
 
@@ -228,7 +189,7 @@ if st.session_state.view_mode == 'Grid':
             st.markdown(f'<p class="grid-stamp-title">{row["name"]}</p>', unsafe_allow_html=True)
             st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             with st.expander("Details"):
-                st.markdown(f'<p class="muted-text"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]}<br><b>Cond:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
+                st.markdown(f'<p style="font-size:12px; color:#94a3b8;"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]}<br><b>Cond:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
                 st.caption(row['description'])
             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -239,8 +200,8 @@ elif st.session_state.view_mode == 'Rows':
         with c1:
             if imgs[0].startswith('http'): st.image(imgs[0], width=110)
         with c2:
-            st.markdown(f'<div style="display:flex; justify-content:space-between; align-items:center;"><p class="row-title">{row["name"]}</p><p class="price-text">${row["formatted_price"]}</p></div>', unsafe_allow_html=True)
-            st.markdown(f'<p class="row-metadata"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Cond:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
+            st.markdown(f'<div style="display:flex; justify-content:space-between; align-items:center;"><p style="font-size:17px; font-weight:700; color:#64748b; margin:0;">{row["name"]}</p><p class="price-text">${row["formatted_price"]}</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<p style="font-size:12px; color:#94a3b8; margin:0;"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Cond:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
             with st.expander("📄 Details & Photos"):
                 st.write(row['description'])
                 if len(imgs) > 1:
@@ -258,16 +219,15 @@ else: # List View
                 if len(imgs) > 1:
                     sub = st.columns(4)
                     for j, url in enumerate(imgs[1:]): sub[j % 4].image(url, use_container_width=True)
-            st.markdown(f"<p class='list-header-title'>{row['name']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-size:17px; font-weight:700; color:#64748b;'>{row['name']}</p>", unsafe_allow_html=True)
             st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             st.write(row['description'])
         st.markdown('<div style="border-top:1px solid #f1f5f9; margin: 2px 0;"></div>', unsafe_allow_html=True)
 
-# Load More Button
 if len(df) > st.session_state.limit:
     if st.button(f"🔽 Load more items ({st.session_state.limit} of {len(df)} Items)"):
         st.session_state.limit += 48
         st.rerun()
 
 st.write("---")
-st.caption("RRKLT Estate Collection, formerly of Cranberry Township, PA.")
+st.caption("RRKLT Estate Collection, Pennsylvania.")

@@ -138,7 +138,7 @@ elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending
 
 st.info(f"Showing {len(df)} items match your selection.")
 
-# Pagination Logic
+# Pagination View
 df_show = df.head(st.session_state.limit)
 
 # --- DISPLAY ---
@@ -182,13 +182,11 @@ elif st.session_state.view_mode == 'Rows':
                             sub[j % 6].image(url, use_container_width=True)
             st.markdown('<div style="border-top:1px solid #eee; margin: 5px 0;"></div>', unsafe_allow_html=True)
 
-else: # "Details" View REPAIRED logic
-    for _, row in df_show.iterrows():
-        # Added key to expander to prevent rendering collisions
+else: # "Details" View
+    for i, row in df_show.iterrows():
         line_text = f"{row['name'][:45]}... | {row['item_specifics_01_country']} | Cat: {row['item_specifics_02_catalog_number']} | ${row['formatted_price']}"
         with st.expander(line_text):
             imgs = str(row['image']).split('||')
-            # Use a simpler layout for stable expander rendering
             if imgs[0].startswith('http'):
                 st.image(imgs[0], width=300)
             
@@ -199,11 +197,17 @@ else: # "Details" View REPAIRED logic
             if len(imgs) > 1:
                 st.markdown("---")
                 st.markdown("**Additional Images:**")
-                sub = st.columns(4)
+                sub_d = st.columns(4)
                 for j, url in enumerate(imgs[1:]):
-                    sub[j % 4].image(url, use_container_width=True)
+                    sub_d[j % 4].image(url, use_container_width=True)
         st.markdown('<div style="border-top:1px solid #eee; margin: 2px 0;"></div>', unsafe_allow_html=True)
 
-# Fixed Infinite Scroll Trigger
+# --- CORRECTED INFINITE SCROLL ---
 if len(df) > st.session_state.limit:
-    # Use st.button as the trigger
+    remaining = len(df) - st.session_state.limit
+    if st.button(f"🔽 Load more items ({remaining} left)"):
+        st.session_state.limit += 48
+        st.rerun()
+
+st.write("---")
+st.caption("RRKLT Estate Collection, formerly of Cranberry Township, PA.")

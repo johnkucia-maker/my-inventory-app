@@ -6,14 +6,14 @@ from difflib import get_close_matches
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Refined CSS (Typography & Spacing focus)
+# 2. Refined CSS (Color & Hierarchy Tuning)
 st.markdown("""
     <style>
-    /* Global Typography Refinements */
+    /* Lightened Slate for Titles */
     .grid-stamp-title {
         font-size: 14px !important;
-        font-weight: 700; /* Bold Name */
-        color: #1a1a1a;
+        font-weight: 700;
+        color: #334155; /* Slate 700 - Softer than black */
         line-height: 1.3;
         margin-bottom: 4px;
         height: 2.8em;
@@ -22,26 +22,31 @@ st.markdown("""
     .row-title {
         font-size: 17px !important;
         font-weight: 700;
-        color: #1a1a1a;
+        color: #334155; 
         margin: 0;
     }
+    
+    /* 10% Less Saturated Green */
     .price-text {
         font-size: 16px;
-        font-weight: 800; /* Extra Bold Price */
-        color: #1e7e34; /* Success Green */
+        font-weight: 800;
+        color: #2d6a4f; /* Desaturated Forest Green */
         margin-bottom: 8px;
     }
+    
     .row-metadata, .muted-text {
         font-size: 12px;
-        color: #64748b; /* Muted Slate Color */
+        color: #64748b; 
         font-weight: 400;
         letter-spacing: 0.2px;
     }
+    
     .stamp-card {
-        border-top: 1px solid #f1f5f9;
+        border-top: 1px solid #e2e8f0;
         padding: 12px 5px;
         margin-bottom: 10px;
     }
+    
     .estate-intro {
         color: #475569;
         font-style: italic;
@@ -49,10 +54,27 @@ st.markdown("""
         margin-bottom: 25px;
         font-size: 15px;
         max-width: 800px;
-        margin-left: auto;
-        margin-right: auto;
+        margin: 0 auto;
     }
-    /* Standardized Buttons */
+
+    /* Muted 'Return to Top' Button */
+    .top-button {
+        background-color: #cbd5e1; /* Muted steel/slate blue */
+        color: #1e293b;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #94a3b8;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-decoration: none;
+        display: block;
+    }
+    .top-button:hover {
+        background-color: #94a3b8;
+        color: white;
+    }
+
     div.stButton > button {
         width: 100%;
         padding: 8px 1px;
@@ -79,7 +101,7 @@ df_raw = load_data()
 
 # --- SIDEBAR ---
 st.sidebar.title("🔍 Gallery Controls")
-st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='background-color:#f0f2f6;padding:10px;border-radius:8px;text-align:center;border:1px solid #dcdfe4;font-weight:bold;margin-bottom:10px;'>⬆️ Return to Top</div></a>", unsafe_allow_html=True)
+st.sidebar.markdown("<a href='#top' class='top-button'>⬆️ Return to Top</a>", unsafe_allow_html=True)
 
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
@@ -119,7 +141,7 @@ if os.path.exists("racingstamp.png"):
     _, cent_co, _ = st.columns([1, 1, 1])
     cent_co.image("racingstamp.png", width=200)
 
-st.markdown("<h1 style='text-align: center; color: #0f172a;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #334155;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
 st.markdown('<p class="estate-intro">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
@@ -188,7 +210,6 @@ elif st.session_state.view_mode == 'Rows':
 
 else: # Details View
     for i, row in df_show.iterrows():
-        # Using muted color for metadata in the expander title
         line_text = f"**{row['name'][:40]}...** | ${row['formatted_price']}"
         with st.expander(line_text):
             imgs = str(row['image']).split('||')

@@ -6,14 +6,14 @@ from difflib import get_close_matches
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Refined CSS (Color & Hierarchy Tuning)
+# 2. Refined CSS
 st.markdown("""
     <style>
-    /* Lightened Slate for Titles */
+    /* Lightened Slate for Titles (Further lightened) */
     .grid-stamp-title {
         font-size: 14px !important;
         font-weight: 700;
-        color: #334155; /* Slate 700 - Softer than black */
+        color: #64748b; /* Lightened Slate */
         line-height: 1.3;
         margin-bottom: 4px;
         height: 2.8em;
@@ -22,21 +22,21 @@ st.markdown("""
     .row-title {
         font-size: 17px !important;
         font-weight: 700;
-        color: #334155; 
+        color: #64748b; 
         margin: 0;
     }
     
-    /* 10% Less Saturated Green */
+    /* Lightened, Desaturated Green */
     .price-text {
         font-size: 16px;
         font-weight: 800;
-        color: #2d6a4f; /* Desaturated Forest Green */
+        color: #52b788; /* Lighter, soft green */
         margin-bottom: 8px;
     }
     
     .row-metadata, .muted-text {
         font-size: 12px;
-        color: #64748b; 
+        color: #94a3b8; /* Lighter muted slate */
         font-weight: 400;
         letter-spacing: 0.2px;
     }
@@ -48,7 +48,7 @@ st.markdown("""
     }
     
     .estate-intro {
-        color: #475569;
+        color: #64748b;
         font-style: italic;
         text-align: center;
         margin-bottom: 25px;
@@ -57,9 +57,8 @@ st.markdown("""
         margin: 0 auto;
     }
 
-    /* Muted 'Return to Top' Button */
     .top-button {
-        background-color: #cbd5e1; /* Muted steel/slate blue */
+        background-color: #cbd5e1;
         color: #1e293b;
         padding: 10px;
         border-radius: 8px;
@@ -100,7 +99,7 @@ def load_data():
 df_raw = load_data()
 
 # --- SIDEBAR ---
-st.sidebar.title("🔍 Gallery Controls")
+st.sidebar.title("Gallery Controls")
 st.sidebar.markdown("<a href='#top' class='top-button'>⬆️ Return to Top</a>", unsafe_allow_html=True)
 
 if 'view_mode' not in st.session_state:
@@ -111,9 +110,9 @@ if 'limit' not in st.session_state:
 col_v1, col_v2, col_v3 = st.sidebar.columns(3)
 if col_v1.button("Grid ⣿"):
     st.session_state.view_mode = 'Grid'
-if col_v2.button("Rows ☰"):
+if col_v2.button("Row ☰"):
     st.session_state.view_mode = 'Rows'
-if col_v3.button("Details ☷"):
+if col_v3.button("List ☷"):
     st.session_state.view_mode = 'Details'
 
 st.sidebar.markdown("---")
@@ -141,7 +140,7 @@ if os.path.exists("racingstamp.png"):
     _, cent_co, _ = st.columns([1, 1, 1])
     cent_co.image("racingstamp.png", width=200)
 
-st.markdown("<h1 style='text-align: center; color: #334155;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #64748b;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
 st.markdown('<p class="estate-intro">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
@@ -208,7 +207,7 @@ elif st.session_state.view_mode == 'Rows':
                             sub[j % 6].image(url, use_container_width=True)
             st.markdown('<div style="border-top:1px solid #f1f5f9; margin: 10px 0;"></div>', unsafe_allow_html=True)
 
-else: # Details View
+else: # Details View (Now the 'List' toggle)
     for i, row in df_show.iterrows():
         line_text = f"**{row['name'][:40]}...** | ${row['formatted_price']}"
         with st.expander(line_text):
@@ -234,4 +233,4 @@ if len(df) > st.session_state.limit:
         st.rerun()
 
 st.write("---")
-st.caption("RRKLT Estate Collection")
+st.caption("RRKLT Estate Collection, formerly of Cranberry Township, PA.")

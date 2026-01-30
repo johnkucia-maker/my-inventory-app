@@ -23,6 +23,7 @@ if st.session_state.dark_mode:
     muted_color = "#94a3b8"
     price_color = "#52b788" 
     text_color = "#e2e8f0"
+    widget_bg = "#0f172a"
 else:
     bg_color = "#ffffff"
     sidebar_bg = "#f8fafc"
@@ -31,6 +32,7 @@ else:
     muted_color = "#94a3b8"  
     price_color = "#52b788"  
     text_color = "#1e293b"
+    widget_bg = "#ffffff"
 
 st.markdown(f"""
     <style>
@@ -45,52 +47,26 @@ st.markdown(f"""
         background-color: {sidebar_bg} !important;
     }}
     
-    /* Centered Sidebar Title */
-    .centered-sidebar-title {{
-        text-align: center !important;
-        color: {title_color} !important;
-        font-weight: bold;
-        font-size: 24px;
-        margin-bottom: 20px;
+    /* FIX: Sidebar Dropdown Menus (Flyout Popovers) */
+    div[data-baseweb="popover"], div[data-baseweb="menu"] {{
+        background-color: {widget_bg} !important;
+        color: {text_color} !important;
     }}
-
-    /* Sidebar Buttons - Light Mode Operation Fix */
-    [data-testid="stSidebar"] button {{
-        background-color: {bg_color} !important;
-        color: {title_color} !important;
-        border: 1px solid {card_border} !important;
-    }}
-    [data-testid="stSidebar"] button:hover {{
-        border-color: {price_color} !important;
-        color: {price_color} !important;
-    }}
-
-    /* LIST / EXPANDER FIX: Prevent dark background on un-hover */
-    .stExpander {{
+    
+    /* FIX: LIST / EXPANDER Un-hover State */
+    [data-testid="stExpander"] {{
         background-color: transparent !important;
         border: none !important;
         border-top: 1px solid {card_border} !important;
     }}
     
-    .stExpander > div:first-child:hover, 
-    .stExpander > div:first-child:active,
-    .stExpander > div:first-child {{
+    [data-testid="stExpanderDetails"] {{
         background-color: transparent !important;
-        color: {title_color} !important;
     }}
 
-    /* List Item Summary Text Operation */
-    .list-summary-container {{
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
+    summary:hover, summary:active, summary:focus, summary {{
+        background-color: transparent !important;
         color: {title_color} !important;
-        font-weight: 700;
-        font-size: 14px;
-    }}
-    .list-summary-price {{
-        color: {price_color} !important;
-        font-weight: 800;
     }}
 
     /* Unified Typography */
@@ -106,12 +82,17 @@ st.markdown(f"""
         color: {price_color} !important;
     }}
     
-    .muted-label {{
-        color: {muted_color} !important;
-        font-size: 12px !important;
+    .list-summary-name {{
+        color: {title_color} !important;
+        font-weight: 700;
+    }}
+    
+    .list-summary-price {{
+        color: {price_color} !important;
+        font-weight: 800;
+        float: right;
     }}
 
-    /* Return to Top Button */
     .top-button {{
         background-color: #cbd5e1 !important;
         color: #1e293b !important;
@@ -142,7 +123,7 @@ def load_data():
 df_raw = load_data()
 
 # --- SIDEBAR ---
-st.sidebar.markdown(f"<div class='centered-sidebar-title'>Gallery Controls</div>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<h2 style='text-align:center; color:{title_color};'>Gallery Controls</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("<a href='#top' class='top-button'>⬆️ Return to Top</a>", unsafe_allow_html=True)
 
 col_v1, col_v2, col_v3 = st.sidebar.columns(3)
@@ -188,9 +169,8 @@ st.markdown(f'<p style="text-align:center; font-style:italic; color:{muted_color
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
 
 df = df_raw.copy()
-# (Filtering Logic here...)
+# (Filtering logic would be applied to df here)
 
-st.info(f"Showing {len(df)} items match your selection.")
 df_show = df.head(st.session_state.limit)
 
 # --- DISPLAY ---
@@ -205,7 +185,7 @@ if st.session_state.view_mode == 'Grid':
             st.markdown(f'<p class="grid-stamp-title">{row["name"]}</p>', unsafe_allow_html=True)
             st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             with st.expander("Details"):
-                st.markdown(f'<p class="muted-label"><b>Cat #:</b> {row["item_specifics_02_catalog_number"]}</p>', unsafe_allow_html=True)
+                st.write(row['description'][:100])
             st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.view_mode == 'Rows':
@@ -220,9 +200,9 @@ elif st.session_state.view_mode == 'Rows':
 
 else: # LIST VIEW
     for i, row in df_show.iterrows():
-        # Summary string matches Grid/Row fonts: Slate Name | Green Price
-        label_html = f'<div class="list-summary-container"><span>{row["name"][:45]}...</span><span class="list-summary-price">${row["formatted_price"]}</span></div>'
-        with st.expander(label_html):
+        # Using a clean string for the expander label to avoid HTML-rendering bugs
+        clean_label = f"{row['name'][:50]}... | ${row['formatted_price']}"
+        with st.expander(clean_label):
             st.markdown(f"<p class='list-title' style='font-size:18px !important;'>{row['name']}</p>", unsafe_allow_html=True)
             st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             st.write(row['description'])

@@ -14,54 +14,51 @@ if 'view_mode' not in st.session_state:
 if 'limit' not in st.session_state: 
     st.session_state.limit = 48
 
-# 3. Dynamic Theme CSS
+# 3. Dynamic Theme CSS Logic
 if st.session_state.dark_mode:
-    # DARK MODE COLORS
     bg_color = "#0f172a"
     sidebar_bg = "#1e293b"
     card_border = "#334155"
     title_color = "#cbd5e1"
     muted_color = "#94a3b8"
-    price_color = "#52b788"  # Brighter mint for dark bg
+    price_color = "#52b788" 
     text_color = "#e2e8f0"
 else:
-    # LIGHT MODE COLORS
     bg_color = "#ffffff"
     sidebar_bg = "#f8fafc"
     card_border = "#e2e8f0"
     title_color = "#64748b"
     muted_color = "#94a3b8"
-    price_color = "#2d6a4f"  # Deeper forest for light bg
+    price_color = "#52b788" # Unified desaturated green
     text_color = "#1e293b"
 
 st.markdown(f"""
     <style>
-    /* Global Background */
     .stApp {{
         background-color: {bg_color};
         color: {text_color};
     }}
     
-    /* Centered Sidebar Title */
     .sidebar-title {{
         text-align: center !important;
         width: 100%;
         color: {title_color};
     }}
     
-    /* Typography Hierarchy */
+    /* Unified Typography across ALL modes */
     .grid-stamp-title, .row-title, .list-title {{
         font-size: 14px !important;
         font-weight: 700;
-        color: {title_color};
+        color: {title_color} !important;
         line-height: 1.3;
+        margin-bottom: 4px;
     }}
     .row-title {{ font-size: 17px !important; }}
     
     .price-text {{
         font-size: 16px;
         font-weight: 800;
-        color: {price_color};
+        color: {price_color} !important;
         margin-bottom: 8px;
     }}
     
@@ -69,22 +66,21 @@ st.markdown(f"""
         font-size: 12px;
         color: {muted_color} !important;
         font-weight: 400;
+        letter-spacing: 0.2px;
     }}
     
-    /* Card/Divider Styles */
     .stamp-card, .stExpander {{
         border-top: 1px solid {card_border} !important;
-        background-color: transparent;
+        background-color: transparent !important;
     }}
     
-    /* Sidebar Specifics */
     [data-testid="stSidebar"] {{
         background-color: {sidebar_bg};
     }}
 
     .top-button {{
-        background-color: {muted_color};
-        color: white;
+        background-color: #cbd5e1;
+        color: #1e293b;
         padding: 10px;
         border-radius: 8px;
         text-align: center;
@@ -92,6 +88,7 @@ st.markdown(f"""
         margin-bottom: 10px;
         text-decoration: none;
         display: block;
+        border: 1px solid #94a3b8;
     }}
     
     .filter-tip {{
@@ -155,7 +152,6 @@ f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
 st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options.</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
-# Dark Mode Toggle at bottom of sidebar
 if st.sidebar.button("🌓 Toggle Dark/Light Mode"):
     st.session_state.dark_mode = not st.session_state.dark_mode
     st.rerun()
@@ -168,7 +164,7 @@ if os.path.exists("racingstamp.png"):
     cent_co.image("racingstamp.png", width=200)
 
 st.markdown(f"<h1 style='text-align: center; color: {title_color};'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
-st.markdown(f'<p class="estate-intro" style="text-align:center; font-style:italic; color:{muted_color};">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
+st.markdown(f'<p style="text-align:center; font-style:italic; color:{muted_color}; margin-bottom: 25px;">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
 search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
 
@@ -241,7 +237,7 @@ else: # List View
             imgs = str(row['image']).split('||')
             if imgs[0].startswith('http'):
                 st.image(imgs[0], width=300)
-            st.markdown(f"<h3 style='color: {title_color};'>{row['name']}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<p class='list-title'>{row['name']}</p>", unsafe_allow_html=True)
             st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             st.markdown(f'<p class="muted-text"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
             st.write(row['description'])

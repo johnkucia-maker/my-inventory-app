@@ -44,7 +44,6 @@ st.markdown("""
         color: #666;
         margin-top: 10px;
     }
-    /* Uniform Sidebar Buttons */
     div.stButton > button {
         width: 100%;
         padding: 8px 1px;
@@ -74,8 +73,9 @@ st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='ba
 
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
+if 'limit' not in st.session_state: 
+    st.session_state.limit = 48
 
-# Layout Toggle Buttons with final icon set
 col_v1, col_v2, col_v3 = st.sidebar.columns(3)
 if col_v1.button("Grid ⣿"):
     st.session_state.view_mode = 'Grid'
@@ -138,9 +138,7 @@ elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending
 
 st.info(f"Showing {len(df)} items match your selection.")
 
-# --- PAGINATION (Set to 48) ---
-if 'limit' not in st.session_state: 
-    st.session_state.limit = 48
+# Pagination Logic
 df_show = df.head(st.session_state.limit)
 
 # --- DISPLAY ---
@@ -184,9 +182,28 @@ elif st.session_state.view_mode == 'Rows':
                             sub[j % 6].image(url, use_container_width=True)
             st.markdown('<div style="border-top:1px solid #eee; margin: 5px 0;"></div>', unsafe_allow_html=True)
 
-else: # "Details" View
+else: # "Details" View REPAIRED logic
     for _, row in df_show.iterrows():
-        with st.container():
-            line_text = f"**{row['name'][:50]}...** | {row['item_specifics_01_country']} | Cat #: {row['item_specifics_02_catalog_number']} | **${row['formatted_price']}**"
-            with st.expander(line_text):
-                imgs = str(row['image']).split('||')
+        # Added key to expander to prevent rendering collisions
+        line_text = f"{row['name'][:45]}... | {row['item_specifics_01_country']} | Cat: {row['item_specifics_02_catalog_number']} | ${row['formatted_price']}"
+        with st.expander(line_text):
+            imgs = str(row['image']).split('||')
+            # Use a simpler layout for stable expander rendering
+            if imgs[0].startswith('http'):
+                st.image(imgs[0], width=300)
+            
+            st.markdown(f"**Full Name:** {row['name']}")
+            st.markdown(f"**Condition:** {row['item_specifics_04_condition']}")
+            st.markdown(f"**Description:** {row['description']}")
+            
+            if len(imgs) > 1:
+                st.markdown("---")
+                st.markdown("**Additional Images:**")
+                sub = st.columns(4)
+                for j, url in enumerate(imgs[1:]):
+                    sub[j % 4].image(url, use_container_width=True)
+        st.markdown('<div style="border-top:1px solid #eee; margin: 2px 0;"></div>', unsafe_allow_html=True)
+
+# Fixed Infinite Scroll Trigger
+if len(df) > st.session_state.limit:
+    # Use st.button as the trigger

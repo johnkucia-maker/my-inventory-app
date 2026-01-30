@@ -14,6 +14,25 @@ st.markdown("""
         width: 100%;
         color: #64748b;
     }
+    /* Hierarchy Styling */
+    .filter-header {
+        font-size: 24px !important;
+        font-weight: 800 !important;
+        color: #475569 !important;
+        margin-bottom: 15px !important;
+    }
+    .filter-subheader {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        margin-top: 10px !important;
+        margin-bottom: 5px !important;
+    }
+    /* Indent Checkboxes */
+    [data-testid="stCheckbox"] {
+        margin-left: 15px !important;
+    }
+    
     .grid-stamp-title {
         font-size: 14px !important;
         font-weight: 700;
@@ -119,47 +138,44 @@ def get_opts(col):
     vals = df_raw[col].unique()
     return sorted([str(x) for x in vals if str(x).strip() != ''])
 
-# Grouped Filter Section
-st.sidebar.markdown("### Filter")
+# --- Grouped Filter Section ---
+st.sidebar.markdown("<p class='filter-header'>Filter</p>", unsafe_allow_html=True)
 
 # Condition Checkboxes
-st.sidebar.write("**Condition**")
+st.sidebar.markdown("<p class='filter-subheader'>Condition</p>", unsafe_allow_html=True)
 f_cond = []
 cond_options = get_opts('item_specifics_04_condition')
 for opt in cond_options:
-    key = f"cond_{opt}"
-    if st.sidebar.checkbox(opt, key=key):
+    if st.sidebar.checkbox(opt, key=f"cond_{opt}"):
         f_cond.append(opt)
 
 # Centering Checkboxes
-st.sidebar.write("**Centering**")
+st.sidebar.markdown("<p class='filter-subheader'>Centering</p>", unsafe_allow_html=True)
 f_cent = []
 cent_options = get_opts('item_specifics_08_centering')
 for opt in cent_options:
-    key = f"cent_{opt}"
-    if st.sidebar.checkbox(opt, key=key):
+    if st.sidebar.checkbox(opt, key=f"cent_{opt}"):
         f_cent.append(opt)
 
 # Dropdown Filters
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
 f_country = st.sidebar.multiselect("Country", get_opts('item_specifics_01_country'), key='ms_country')
 f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'), key='ms_type')
 f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'), key='ms_form')
 f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"], key='sb_cert')
 
-# Reset Functionality
+# Fixed Reset Functionality
 if st.sidebar.button("❌ Reset All Filters"):
-    # Reset limit
+    # Clear session state keys to reset widgets
+    keys_to_reset = ['ms_country', 'ms_type', 'ms_form', 'sb_cert', 'limit']
+    for opt in cond_options: keys_to_reset.append(f"cond_{opt}")
+    for opt in cent_options: keys_to_reset.append(f"cent_{opt}")
+    
+    for key in keys_to_reset:
+        if key in st.session_state:
+            del st.session_state[key]
+            
     st.session_state.limit = 48
-    # Reset multiselects and selectboxes by clearing their keys
-    for key in ['ms_country', 'ms_type', 'ms_form', 'sb_cert']:
-        if key in st.session_state: del st.session_state[key]
-    # Reset checkboxes by clearing their specific keys
-    for opt in cond_options:
-        ckey = f"cond_{opt}"
-        if ckey in st.session_state: st.session_state[ckey] = False
-    for opt in cent_options:
-        ckey = f"cent_{opt}"
-        if ckey in st.session_state: st.session_state[ckey] = False
     st.rerun()
 
 st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options in dropdowns.</p>', unsafe_allow_html=True)

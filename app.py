@@ -115,21 +115,36 @@ st.sidebar.markdown("---")
 sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
 st.sidebar.markdown("---")
 
-if st.sidebar.button("❌ Reset All Filters"):
-    st.session_state.limit = 48
-    st.rerun()
-
 def get_opts(col):
     vals = df_raw[col].unique()
     return sorted([str(x) for x in vals if str(x).strip() != ''])
 
+# New Checkbox Stack at Top
+st.sidebar.write("**Condition**")
+f_cond = []
+for opt in get_opts('item_specifics_04_condition'):
+    if st.sidebar.checkbox(opt, key=f"cond_{opt}"):
+        f_cond.append(opt)
+
+st.sidebar.write("**Centering**")
+f_cent = []
+for opt in get_opts('item_specifics_08_centering'):
+    if st.sidebar.checkbox(opt, key=f"cent_{opt}"):
+        f_cent.append(opt)
+
+st.sidebar.markdown("---")
+
+# New Country Dropdown and original filters
+f_country = st.sidebar.multiselect("Country", get_opts('item_specifics_01_country'))
 f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'))
-f_cond = st.sidebar.multiselect("Condition", get_opts('item_specifics_04_condition'))
-f_cent = st.sidebar.multiselect("Centering", get_opts('item_specifics_08_centering'))
 f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'))
 f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
 
-st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options.</p>', unsafe_allow_html=True)
+if st.sidebar.button("❌ Reset All Filters"):
+    st.session_state.limit = 48
+    st.rerun()
+
+st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options in dropdowns.</p>', unsafe_allow_html=True)
 
 # --- TOP SECTION ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
@@ -148,10 +163,12 @@ if search:
     s_term = search.lower()
     df = df[df['search_blob'].apply(lambda x: s_term in x or len(get_close_matches(s_term, x.split(), n=1, cutoff=0.7)) > 0)]
 
-if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
+if f_country: df = df[df['item_specifics_01_country'].isin(f_country)]
 if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
 if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]
+if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
 if f_form: df = df[df['item_specifics_05_stamp_format'].isin(f_form)]
+
 if f_has_cert == "Yes": df = df[df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
 elif f_has_cert == "No": df = df[~df['item_specifics_09_has_a_certificate'].str.contains("Yes", case=False)]
 
@@ -214,7 +231,6 @@ else: # List View
 
 # 5. Load More Button with dynamic count
 if len(df) > st.session_state.limit:
-    remaining = len(df) - st.session_state.limit
     if st.button(f"🔽 Load more items ({st.session_state.limit} of {len(df)} Items)"):
         st.session_state.limit += 48
         st.rerun()

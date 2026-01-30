@@ -14,7 +14,7 @@ if 'view_mode' not in st.session_state:
 if 'limit' not in st.session_state: 
     st.session_state.limit = 48
 
-# 3. Forced Theme Engine (Using !important to ensure override)
+# 3. Comprehensive Theme Engine
 if st.session_state.dark_mode:
     bg_color = "#0f172a"
     sidebar_bg = "#1e293b"
@@ -23,27 +23,41 @@ if st.session_state.dark_mode:
     muted_color = "#94a3b8"
     price_color = "#52b788" 
     text_color = "#e2e8f0"
+    widget_bg = "#0f172a"
 else:
     bg_color = "#ffffff"
     sidebar_bg = "#f8fafc"
     card_border = "#e2e8f0"
-    title_color = "#64748b"  # Desired Light Slate
-    muted_color = "#94a3b8"  # Desired Light Muted
-    price_color = "#52b788"  # Desaturated Green
+    title_color = "#64748b"  
+    muted_color = "#94a3b8"  
+    price_color = "#52b788"  
     text_color = "#1e293b"
+    widget_bg = "#ffffff"
 
 st.markdown(f"""
     <style>
-    /* Global Background & Text */
+    /* Global App Background */
     .stApp {{
         background-color: {bg_color} !important;
         color: {text_color} !important;
     }}
     
-    /* Sidebar Layout */
+    /* Sidebar Background and Widget Labels */
     [data-testid="stSidebar"] {{
         background-color: {sidebar_bg} !important;
     }}
+    [data-testid="stSidebar"] .stMarkdown p, 
+    [data-testid="stSidebar"] label {{
+        color: {title_color} !important;
+    }}
+    
+    /* Sidebar Widget Styling (Dropdowns/Multiselect) */
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {{
+        background-color: {widget_bg} !important;
+        color: {text_color} !important;
+        border: 1px solid {card_border} !important;
+    }}
+    
     .centered-sidebar-title {{
         text-align: center !important;
         color: {title_color} !important;
@@ -52,13 +66,12 @@ st.markdown(f"""
         margin-bottom: 20px;
     }}
     
-    /* Typography Overrides */
-    .grid-stamp-title, .row-title, .list-title, .st-emotion-cache-pcy066 {{
+    /* Main Gallery Typography */
+    .grid-stamp-title, .row-title, .list-title {{
         font-size: 14px !important;
         font-weight: 700 !important;
         color: {title_color} !important;
     }}
-    .row-title {{ font-size: 17px !important; }}
     
     .price-text {{
         font-size: 16px !important;
@@ -66,22 +79,12 @@ st.markdown(f"""
         color: {price_color} !important;
     }}
     
-    .muted-text, .row-metadata, .stCaption, p {{
-        color: {muted_color} if '{st.session_state.dark_mode}' == 'True' else {text_color};
-    }}
-
     .muted-label {{
         color: {muted_color} !important;
         font-size: 12px !important;
     }}
-    
-    /* Expander/List Layout Overrides */
-    .stExpander {{
-        border: none !important;
-        border-top: 1px solid {card_border} !important;
-        background-color: transparent !important;
-    }}
-    
+
+    /* Top Button Styling */
     .top-button {{
         background-color: #cbd5e1 !important;
         color: #1e293b !important;
@@ -145,7 +148,7 @@ if st.sidebar.button("🌓 Toggle Dark/Light Mode"):
     st.session_state.dark_mode = not st.session_state.dark_mode
     st.rerun()
 
-# --- TOP SECTION ---
+# --- MAIN CONTENT ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
 if os.path.exists("racingstamp.png"):
@@ -163,7 +166,6 @@ if search:
     s_term = search.lower()
     df = df[df['search_blob'].apply(lambda x: s_term in x or len(get_close_matches(s_term, x.split(), n=1, cutoff=0.7)) > 0)]
 
-# Filter logic... (same as before)
 if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
 if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
 if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]
@@ -177,7 +179,7 @@ elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending
 st.info(f"Showing {len(df)} items match your selection.")
 df_show = df.head(st.session_state.limit)
 
-# --- DISPLAY ---
+# --- DISPLAY LOGIC ---
 if st.session_state.view_mode == 'Grid':
     grid_cols = st.columns(4)
     for i, (_, row) in enumerate(df_show.iterrows()):
@@ -235,7 +237,7 @@ else: # List View
                     sub_d[j % 4].image(url, use_container_width=True)
         st.markdown(f'<div style="border-top:1px solid {card_border}; margin: 2px 0;"></div>', unsafe_allow_html=True)
 
-# Infinite Scroll
+# Pagination
 if len(df) > st.session_state.limit:
     remaining = len(df) - st.session_state.limit
     if st.button(f"🔽 Load more items ({remaining} left)"):

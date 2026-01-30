@@ -6,7 +6,7 @@ from difflib import get_close_matches
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Custom CSS for High-Density Views
+# 2. Custom CSS
 st.markdown("""
     <style>
     .grid-stamp-title {
@@ -27,13 +27,6 @@ st.markdown("""
         color: #555;
         margin-top: 2px;
     }
-    .details-line {
-        font-size: 14px;
-        font-weight: 500;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
     .stamp-card {
         border-top: 1px solid #dee2e6;
         padding: 10px 5px;
@@ -50,6 +43,13 @@ st.markdown("""
         font-size: 11px;
         color: #666;
         margin-top: 10px;
+    }
+    /* Uniform Sidebar Buttons */
+    div.stButton > button {
+        width: 100%;
+        padding: 8px 1px;
+        font-size: 11px;
+        white-space: nowrap;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -75,13 +75,13 @@ st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='ba
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
 
-# Updated Layout Selection with 3 Modes
+# Standardized Layout Toggle Buttons with requested icons
 col_v1, col_v2, col_v3 = st.sidebar.columns(3)
-if col_v1.button("⣿ Grid"):
+if col_v1.button("Grid ⠇⠇"):
     st.session_state.view_mode = 'Grid'
-if col_v2.button("▤ Rows"):
+if col_v2.button("Rows ☰"):
     st.session_state.view_mode = 'Rows'
-if col_v3.button("☰ Details"):
+if col_v3.button("Details ⁝⸗"):
     st.session_state.view_mode = 'Details'
 
 st.sidebar.markdown("---")
@@ -186,10 +186,9 @@ elif st.session_state.view_mode == 'Rows':
 
 else: # "Details" View
     for _, row in df_show.iterrows():
-        # Single line of text with expander for everything else
         with st.container():
-            # Creating a text summary for the line
-            line_text = f"**{row['name'][:60]}...** | Cat #: {row['item_specifics_02_catalog_number']} | **${row['formatted_price']}**"
+            # Added Country to the text-line summary
+            line_text = f"**{row['name'][:50]}...** | {row['item_specifics_01_country']} | Cat #: {row['item_specifics_02_catalog_number']} | **${row['formatted_price']}**"
             with st.expander(line_text):
                 imgs = str(row['image']).split('||')
                 e1, e2 = st.columns([1, 2])
@@ -198,6 +197,7 @@ else: # "Details" View
                         st.image(imgs[0], use_container_width=True)
                 with e2:
                     st.write(f"**Full Name:** {row['name']}")
+                    st.write(f"**Condition:** {row['item_specifics_04_condition']}")
                     st.write(f"**Description:** {row['description']}")
                 if len(imgs) > 1:
                     st.write("**Additional Images:**")

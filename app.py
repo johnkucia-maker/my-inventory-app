@@ -6,7 +6,7 @@ from difflib import get_close_matches
 # 1. Page Config
 st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 
-# 2. Custom CSS for High-Density View and Infinite Scroll UX
+# 2. Custom CSS for High-Density Views
 st.markdown("""
     <style>
     .grid-stamp-title {
@@ -26,6 +26,13 @@ st.markdown("""
         font-size: 13px;
         color: #555;
         margin-top: 2px;
+    }
+    .details-line {
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .stamp-card {
         border-top: 1px solid #dee2e6;
@@ -53,9 +60,7 @@ def load_data():
     df = pd.read_csv("inventory.csv")
     df['buyout_price'] = pd.to_numeric(df['buyout_price'], errors='coerce')
     df = df.fillna('')
-    # Currency formatting for display
     df['formatted_price'] = df['buyout_price'].apply(lambda x: f"{x:,.2f}" if pd.notnull(x) else "0.00")
-    # Unified search blob for device-agnostic searching
     df['search_blob'] = (df['name'].astype(str) + " " + 
                          df['item_specifics_02_catalog_number'].astype(str) + " " + 
                          df['item_specifics_01_country'].astype(str)).str.lower()
@@ -70,28 +75,27 @@ st.sidebar.markdown("<a href='#top' style='text-decoration:none;'><div style='ba
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'Grid'
 
-col_v1, col_v2 = st.sidebar.columns(2)
+# Updated Layout Selection with 3 Modes
+col_v1, col_v2, col_v3 = st.sidebar.columns(3)
 if col_v1.button("⣿ Grid"):
     st.session_state.view_mode = 'Grid'
-if col_v2.button("☰ Rows"):
+if col_v2.button("▤ Rows"):
     st.session_state.view_mode = 'Rows'
+if col_v3.button("☰ Details"):
+    st.session_state.view_mode = 'Details'
 
 st.sidebar.markdown("---")
 sort_option = st.sidebar.selectbox("Sort Price:", ["Original", "Low to High", "High to Low"])
 st.sidebar.markdown("---")
 
-# Reset All Button
 if st.sidebar.button("❌ Reset All Filters"):
     st.session_state.limit = 24
     st.rerun()
 
-# --- FUNCTION REPAIRED HERE ---
 def get_opts(col):
-    """Returns a sorted list of unique values for filters."""
     vals = df_raw[col].unique()
     return sorted([str(x) for x in vals if str(x).strip() != ''])
 
-# The 5 Active Filter Categories
 f_type = st.sidebar.multiselect("Stamp Type", get_opts('item_specifics_03_stamp_type'))
 f_cond = st.sidebar.multiselect("Condition", get_opts('item_specifics_04_condition'))
 f_cent = st.sidebar.multiselect("Centering", get_opts('item_specifics_08_centering'))
@@ -110,14 +114,13 @@ if os.path.exists("racingstamp.png"):
 st.markdown("<h1 style='text-align: center;'>RRKLT Estate Collection</h1>", unsafe_allow_html=True)
 st.markdown('<p class="estate-intro">This collection of stamps was acquired by Richard Kucia from 1940 through 2024, and passed to the Richard Kucia Trust at his death in 2025.</p>', unsafe_allow_html=True)
 
-search = st.text_input("🔍 Search", placeholder="Fuzzy search active (cat #, country, or name)...")
+search = st.text_input("🔍 Search", placeholder="Fuzzy search active...")
 
 # --- FILTERING ---
 df = df_raw.copy()
 
 if search:
     s_term = search.lower()
-    # Fuzzy logic: Exact match OR partial match OR close spelling
     df = df[df['search_blob'].apply(lambda x: s_term in x or len(get_close_matches(s_term, x.split(), n=1, cutoff=0.7)) > 0)]
 
 if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
@@ -133,7 +136,7 @@ elif f_has_cert == "No":
 if sort_option == "Low to High": df = df.sort_values("buyout_price")
 elif sort_option == "High to Low": df = df.sort_values("buyout_price", ascending=False)
 
-st.info(f"Showing {len(df)} items match your selection.")
+st.info(f"Showing {len(df)} items in {st.session_state.view_mode} mode.")
 
 # --- PAGINATION ---
 if 'limit' not in st.session_state: 
@@ -161,8 +164,8 @@ if st.session_state.view_mode == 'Grid':
                 st.write(f"**Cond:** {row['item_specifics_04_condition']}")
                 st.caption(row['description'][:100] + "...")
             st.markdown('</div>', unsafe_allow_html=True)
-else:
-    # High-Density Row View
+
+elif st.session_state.view_mode == 'Rows':
     for _, row in df_show.iterrows():
         with st.container():
             c1, c2 = st.columns([0.6, 3.4])
@@ -181,7 +184,29 @@ else:
                             sub[j % 6].image(url, use_container_width=True)
             st.markdown('<div style="border-top:1px solid #eee; margin: 5px 0;"></div>', unsafe_allow_html=True)
 
-# Simulated Infinite Scroll Trigger
+else: # "Details" View
+    for _, row in df_show.iterrows():
+        # Single line of text with expander for everything else
+        with st.container():
+            # Creating a text summary for the line
+            line_text = f"**{row['name'][:60]}...** | Cat #: {row['item_specifics_02_catalog_number']} | **${row['formatted_price']}**"
+            with st.expander(line_text):
+                imgs = str(row['image']).split('||')
+                e1, e2 = st.columns([1, 2])
+                with e1:
+                    if imgs[0].startswith('http'):
+                        st.image(imgs[0], use_container_width=True)
+                with e2:
+                    st.write(f"**Full Name:** {row['name']}")
+                    st.write(f"**Description:** {row['description']}")
+                if len(imgs) > 1:
+                    st.write("**Additional Images:**")
+                    sub = st.columns(6)
+                    for j, url in enumerate(imgs[1:]):
+                        sub[j % 6].image(url, use_container_width=True)
+            st.markdown('<div style="border-top:1px solid #eee; margin: 2px 0;"></div>', unsafe_allow_html=True)
+
+# Infinite Scroll Trigger
 if len(df) > st.session_state.limit:
     if st.button("🔽 Load more items"):
         st.session_state.limit += 24

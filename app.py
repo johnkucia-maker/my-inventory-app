@@ -9,11 +9,17 @@ st.set_page_config(page_title="RRKLT Estate Collection", layout="wide")
 # 2. Refined CSS
 st.markdown("""
     <style>
-    /* Lightened Slate for Titles (Further lightened) */
+    /* Centered Sidebar Title */
+    [data-testid="stSidebarNav"] + div h1, .sidebar-title {
+        text-align: center !important;
+        width: 100%;
+    }
+    
+    /* Lightened Slate for Titles */
     .grid-stamp-title {
         font-size: 14px !important;
         font-weight: 700;
-        color: #64748b; /* Lightened Slate */
+        color: #64748b; 
         line-height: 1.3;
         margin-bottom: 4px;
         height: 2.8em;
@@ -30,13 +36,13 @@ st.markdown("""
     .price-text {
         font-size: 16px;
         font-weight: 800;
-        color: #52b788; /* Lighter, soft green */
+        color: #52b788; 
         margin-bottom: 8px;
     }
     
     .row-metadata, .muted-text {
         font-size: 12px;
-        color: #94a3b8; /* Lighter muted slate */
+        color: #94a3b8; 
         font-weight: 400;
         letter-spacing: 0.2px;
     }
@@ -74,6 +80,13 @@ st.markdown("""
         color: white;
     }
 
+    .filter-tip {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 10px;
+        text-align: center;
+    }
+
     div.stButton > button {
         width: 100%;
         padding: 8px 1px;
@@ -99,7 +112,7 @@ def load_data():
 df_raw = load_data()
 
 # --- SIDEBAR ---
-st.sidebar.title("Gallery Controls")
+st.sidebar.markdown("<h2 class='sidebar-title'>Gallery Controls</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("<a href='#top' class='top-button'>⬆️ Return to Top</a>", unsafe_allow_html=True)
 
 if 'view_mode' not in st.session_state:
@@ -133,6 +146,8 @@ f_cent = st.sidebar.multiselect("Centering", get_opts('item_specifics_08_centeri
 f_form = st.sidebar.multiselect("Stamp Format", get_opts('item_specifics_05_stamp_format'))
 f_has_cert = st.sidebar.selectbox("Has a Certificate?", ["All", "Yes", "No"])
 
+st.sidebar.markdown('<p class="filter-tip">💡 Hold <b>Ctrl</b> (Win) or <b>Cmd</b> (Mac) to select multiple options.</p>', unsafe_allow_html=True)
+
 # --- TOP SECTION ---
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
@@ -152,7 +167,7 @@ if search:
     df = df[df['search_blob'].apply(lambda x: s_term in x or len(get_close_matches(s_term, x.split(), n=1, cutoff=0.7)) > 0)]
 
 if f_type: df = df[df['item_specifics_03_stamp_type'].isin(f_type)]
-if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond)]
+if f_cond: df = df[df['item_specifics_04_condition'].isin(f_cond) ]
 if f_cent: df = df[df['item_specifics_08_centering'].isin(f_cent)]
 if f_form: df = df[df['item_specifics_05_stamp_format'].isin(f_form)]
 
@@ -207,14 +222,15 @@ elif st.session_state.view_mode == 'Rows':
                             sub[j % 6].image(url, use_container_width=True)
             st.markdown('<div style="border-top:1px solid #f1f5f9; margin: 10px 0;"></div>', unsafe_allow_html=True)
 
-else: # Details View (Now the 'List' toggle)
+else: # List View
     for i, row in df_show.iterrows():
+        # Updated Title with correct hierarchy colors
         line_text = f"**{row['name'][:40]}...** | ${row['formatted_price']}"
         with st.expander(line_text):
             imgs = str(row['image']).split('||')
             if imgs[0].startswith('http'):
                 st.image(imgs[0], width=300)
-            st.markdown(f"### {row['name']}")
+            st.markdown(f"<h3 style='color: #64748b;'>{row['name']}</h3>", unsafe_allow_html=True)
             st.markdown(f'<p class="price-text">${row["formatted_price"]}</p>', unsafe_allow_html=True)
             st.markdown(f'<p class="muted-text"><b>Country:</b> {row["item_specifics_01_country"]} | <b>Cat #:</b> {row["item_specifics_02_catalog_number"]} | <b>Condition:</b> {row["item_specifics_04_condition"]}</p>', unsafe_allow_html=True)
             st.write(row['description'])
